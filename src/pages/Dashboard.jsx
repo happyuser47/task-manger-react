@@ -10,6 +10,7 @@ import Analytics from '../components/Analytics';
 import UserMenu from '../components/UserMenuNew';
 import Loader from '../components/Loader';
 import ExportMenu from '../components/ExportMenu';
+import WorkSession from '../components/WorkSession';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -48,6 +49,11 @@ const Dashboard = () => {
           <ExportMenu tasks={tasks} />
           <UserMenu />
         </Header>
+        
+        {/* Work Session - Check In/Out */}
+        <div className="work-session-container">
+          <WorkSession />
+        </div>
         
         {/* Main Navigation Tabs */}
         <nav className="main-nav">
