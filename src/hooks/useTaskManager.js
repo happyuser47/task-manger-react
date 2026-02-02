@@ -36,18 +36,31 @@ export const useTaskManager = () => {
         addNotification('warning', 'Error', 'Failed to load tasks');
       } else {
         // Map Supabase data to our task format with persisted timer state
-        const mappedTasks = data.map(task => ({
-          id: task.id,
-          name: task.title,
-          status: task.completed ? 'completed' : 'idle',
-          currentTime: task.elapsed_time || 0,
-          bestTime: task.best_time || null,
-          attempts: task.attempts || [],
-          isExceeding: false,
-          startedAt: null,
-          createdAt: new Date(task.created_at).getTime(),
-          completed: task.completed,
-        }));
+        const mappedTasks = data.map(task => {
+          // Check if task was running (has started_at)
+          const startedAt = task.started_at ? new Date(task.started_at).getTime() : null;
+          const isRunning = startedAt && !task.completed;
+          
+          // Calculate current elapsed time if running
+          let currentTime = task.elapsed_time || 0;
+          if (isRunning) {
+            const elapsedSinceStart = Math.floor((Date.now() - startedAt) / 1000);
+            currentTime = (task.elapsed_time || 0) + elapsedSinceStart;
+          }
+          
+          return {
+            id: task.id,
+            name: task.title,
+            status: task.completed ? 'completed' : (isRunning ? 'running' : 'idle'),
+            currentTime: currentTime,
+            bestTime: task.best_time || null,
+            attempts: task.attempts || [],
+            isExceeding: false,
+            startedAt: startedAt,
+            createdAt: new Date(task.created_at).getTime(),
+            completed: task.completed,
+          };
+        });
         setTasks(mappedTasks);
       }
       setLoading(false);
@@ -231,33 +244,6 @@ export const useTaskManager = () => {
     }
   }, [user, tasks, addNotification]);
 
-  // Start timer for a task (local state only)
-  const startTask = useCallback((id) => {
-    setTasks(prev => prev.map(task => {
-      if (task.id === id) {
-        const updatedTask = {
-          ...task,
-          status: 'running',
-          isExceeding: false,
-          startedAt: Date.now(),
-        };
-        timerDataRef.current[id] = { ...timerDataRef.current[id], ...updatedTask };
-        return updatedTask;
-      }
-      // Stop any other running tasks
-      if (task.status === 'running') {
-        const updatedTask = {
-          ...task,
-          status: 'idle',
-          startedAt: null,
-        };
-        timerDataRef.current[task.id] = { ...timerDataRef.current[task.id], ...updatedTask };
-        return updatedTask;
-      }
-      return task;
-    }));
-  }, []);
-
   // Stop timer for a task and save to Supabase
   const stopTask = useCallback(async (id) => {
     notifiedExceedingRef.current.delete(id);
@@ -279,14 +265,63 @@ export const useTaskManager = () => {
       return t;
     }));
     
-    // Save to Supabase
+    // Save elapsed time and clear started_at in Supabase
     const { error } = await supabase
       .from('tasks')
-      .update({ elapsed_time: currentTime })
+      .update({ 
+        elapsed_time: currentTime,
+        started_at: null 
+      })
       .eq('id', id);
     
     if (error) {
       console.error('Error saving timer state:', error);
+    }
+  }, [tasks]);
+
+  // Start timer for a task and save to Supabase
+  const startTask = useCallback(async (id) => {
+    const now = Date.now();
+    const nowISO = new Date(now).toISOString();
+    
+    // First, stop any other running tasks locally and in Supabase
+    const runningTask = tasks.find(t => t.status === 'running' && t.id !== id);
+    if (runningTask) {
+      // Stop the running task inline to avoid circular dependency
+      const currentTime = runningTask.currentTime;
+      setTasks(prev => prev.map(t => {
+        if (t.id === runningTask.id) {
+          return { ...t, status: 'idle', startedAt: null };
+        }
+        return t;
+      }));
+      await supabase
+        .from('tasks')
+        .update({ elapsed_time: currentTime, started_at: null })
+        .eq('id', runningTask.id);
+    }
+    
+    // Update local state immediately
+    setTasks(prev => prev.map(task => {
+      if (task.id === id) {
+        return {
+          ...task,
+          status: 'running',
+          isExceeding: false,
+          startedAt: now,
+        };
+      }
+      return task;
+    }));
+    
+    // Save to Supabase
+    const { error } = await supabase
+      .from('tasks')
+      .update({ started_at: nowISO })
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error starting task:', error);
     }
   }, [tasks]);
 
@@ -311,6 +346,7 @@ export const useTaskManager = () => {
       .update({ 
         completed: true,
         elapsed_time: 0,
+        started_at: null,
         best_time: newBestTime,
         attempts: newAttempts
       })
@@ -353,10 +389,33 @@ export const useTaskManager = () => {
   const restartTask = useCallback(async (id) => {
     if (!user) return;
     
-    // Update in Supabase to mark as not completed and reset elapsed_time
+    const now = Date.now();
+    const nowISO = new Date(now).toISOString();
+    
+    // First, stop any other running tasks inline to avoid circular dependency
+    const runningTask = tasks.find(t => t.status === 'running' && t.id !== id);
+    if (runningTask) {
+      const currentTime = runningTask.currentTime;
+      setTasks(prev => prev.map(t => {
+        if (t.id === runningTask.id) {
+          return { ...t, status: 'idle', startedAt: null };
+        }
+        return t;
+      }));
+      await supabase
+        .from('tasks')
+        .update({ elapsed_time: currentTime, started_at: null })
+        .eq('id', runningTask.id);
+    }
+    
+    // Update in Supabase to mark as not completed, reset elapsed_time, and set started_at
     const { error } = await supabase
       .from('tasks')
-      .update({ completed: false, elapsed_time: 0 })
+      .update({ 
+        completed: false, 
+        elapsed_time: 0,
+        started_at: nowISO
+      })
       .eq('id', id)
       .eq('user_id', user.id);
 
@@ -366,31 +425,19 @@ export const useTaskManager = () => {
     } else {
       setTasks(prev => prev.map(task => {
         if (task.id === id) {
-          const updatedTask = {
+          return {
             ...task,
             status: 'running',
             currentTime: 0,
             isExceeding: false,
-            startedAt: Date.now(),
+            startedAt: now,
             completed: false,
           };
-          timerDataRef.current[id] = { ...updatedTask };
-          return updatedTask;
-        }
-        // Stop any other running tasks
-        if (task.status === 'running') {
-          const updatedTask = {
-            ...task,
-            status: 'idle',
-            startedAt: null,
-          };
-          timerDataRef.current[task.id] = { ...timerDataRef.current[task.id], ...updatedTask };
-          return updatedTask;
         }
         return task;
       }));
     }
-  }, [user, addNotification]);
+  }, [user, tasks, addNotification]);
 
   // Update timer for running tasks
   const updateTimers = useCallback(() => {
