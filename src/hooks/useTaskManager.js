@@ -35,16 +35,16 @@ export const useTaskManager = () => {
         console.error('Error fetching tasks:', error);
         addNotification('warning', 'Error', 'Failed to load tasks');
       } else {
-        // Map Supabase data to our task format with local timer state
+        // Map Supabase data to our task format with persisted timer state
         const mappedTasks = data.map(task => ({
           id: task.id,
           name: task.title,
-          status: task.completed ? 'completed' : (timerDataRef.current[task.id]?.status || 'idle'),
-          currentTime: timerDataRef.current[task.id]?.currentTime || 0,
-          bestTime: timerDataRef.current[task.id]?.bestTime || null,
-          attempts: timerDataRef.current[task.id]?.attempts || [],
-          isExceeding: timerDataRef.current[task.id]?.isExceeding || false,
-          startedAt: timerDataRef.current[task.id]?.startedAt || null,
+          status: task.completed ? 'completed' : 'idle',
+          currentTime: task.elapsed_time || 0,
+          bestTime: task.best_time || null,
+          attempts: task.attempts || [],
+          isExceeding: false,
+          startedAt: null,
           createdAt: new Date(task.created_at).getTime(),
           completed: task.completed,
         }));
@@ -66,9 +66,9 @@ export const useTaskManager = () => {
               id: payload.new.id,
               name: payload.new.title,
               status: payload.new.completed ? 'completed' : 'idle',
-              currentTime: 0,
-              bestTime: null,
-              attempts: [],
+              currentTime: payload.new.elapsed_time || 0,
+              bestTime: payload.new.best_time || null,
+              attempts: payload.new.attempts || [],
               isExceeding: false,
               startedAt: null,
               createdAt: new Date(payload.new.created_at).getTime(),
@@ -83,8 +83,9 @@ export const useTaskManager = () => {
                 return {
                   ...t,
                   name: payload.new.title,
-                  completed: payload.new.completed,
-                  status: payload.new.completed ? 'completed' : t.status,
+                  completed: payload.new.completed,                  currentTime: payload.new.elapsed_time ?? t.currentTime,
+                  bestTime: payload.new.best_time ?? t.bestTime,
+                  attempts: payload.new.attempts ?? t.attempts,                  status: payload.new.completed ? 'completed' : t.status,
                 };
               }
               return t;
@@ -257,22 +258,37 @@ export const useTaskManager = () => {
     }));
   }, []);
 
-  // Stop timer for a task (local state only)
-  const stopTask = useCallback((id) => {
+  // Stop timer for a task and save to Supabase
+  const stopTask = useCallback(async (id) => {
     notifiedExceedingRef.current.delete(id);
-    setTasks(prev => prev.map(task => {
-      if (task.id === id && task.status === 'running') {
-        const updatedTask = {
-          ...task,
+    
+    const task = tasks.find(t => t.id === id);
+    if (!task || task.status !== 'running') return;
+    
+    const currentTime = task.currentTime;
+    
+    // Update local state immediately
+    setTasks(prev => prev.map(t => {
+      if (t.id === id) {
+        return {
+          ...t,
           status: 'idle',
           startedAt: null,
         };
-        timerDataRef.current[id] = { ...timerDataRef.current[id], ...updatedTask };
-        return updatedTask;
       }
-      return task;
+      return t;
     }));
-  }, []);
+    
+    // Save to Supabase
+    const { error } = await supabase
+      .from('tasks')
+      .update({ elapsed_time: currentTime })
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error saving timer state:', error);
+    }
+  }, [tasks]);
 
   // Complete a task
   const completeTask = useCallback(async (id) => {
@@ -289,10 +305,15 @@ export const useTaskManager = () => {
       ? finalTime 
       : Math.min(task.bestTime, finalTime);
 
-    // Update in Supabase
+    // Update in Supabase with timer data
     const { error } = await supabase
       .from('tasks')
-      .update({ completed: true })
+      .update({ 
+        completed: true,
+        elapsed_time: 0,
+        best_time: newBestTime,
+        attempts: newAttempts
+      })
       .eq('id', id)
       .eq('user_id', user.id);
 
@@ -332,10 +353,10 @@ export const useTaskManager = () => {
   const restartTask = useCallback(async (id) => {
     if (!user) return;
     
-    // Update in Supabase to mark as not completed
+    // Update in Supabase to mark as not completed and reset elapsed_time
     const { error } = await supabase
       .from('tasks')
-      .update({ completed: false })
+      .update({ completed: false, elapsed_time: 0 })
       .eq('id', id)
       .eq('user_id', user.id);
 
