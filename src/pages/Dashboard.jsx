@@ -8,6 +8,8 @@ import TaskList from '../components/TaskList';
 import Notification from '../components/Notification';
 import Analytics from '../components/Analytics';
 import UserMenu from '../components/UserMenuNew';
+import Loader from '../components/Loader';
+import ExportMenu from '../components/ExportMenu';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -31,14 +33,7 @@ const Dashboard = () => {
   const { theme, toggleTheme } = useTheme();
 
   if (loading) {
-    return (
-      <div className="app">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading your tasks...</p>
-        </div>
-      </div>
-    );
+    return <Loader message="Loading your tasks..." />;
   }
 
   return (
@@ -50,6 +45,7 @@ const Dashboard = () => {
       
       <div className="app-container">
         <Header theme={theme} onToggleTheme={toggleTheme}>
+          <ExportMenu tasks={tasks} />
           <UserMenu />
         </Header>
         
