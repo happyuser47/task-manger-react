@@ -5,16 +5,9 @@ const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  // Show loading state while checking auth
+  // Return null or partial UI while checking auth to avoid double-loader "simple" look
   if (loading) {
-    return (
-      <div className="app loading-screen">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // Redirect to login if not authenticated

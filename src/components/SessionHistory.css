@@ -788,22 +788,59 @@
 }
 
 /* Responsive Styles */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .history-stats-grid {
-    grid-template-columns: 1fr;
     gap: 12px;
   }
 
   .history-stat-card {
-    padding: 16px;
+    padding: 20px;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .history-page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .history-actions {
+    justify-content: space-between;
+  }
+
+  .history-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .history-stat-card {
+    padding: 16px 20px;
+    justify-content: flex-start;
   }
 
   .filter-tabs {
-    flex-wrap: wrap;
-    justify-content: center;
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 8px;
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  .filter-tabs::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
   }
 
   .filter-tab {
+    flex-shrink: 0;
     padding: 8px 16px;
     font-size: 0.8125rem;
   }
@@ -830,10 +867,14 @@
 
   .session-duration {
     flex: 1;
+    text-align: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
   }
 
   .btn-delete-session {
     opacity: 1;
+    background: var(--bg-tertiary);
   }
 }
 
@@ -842,24 +883,74 @@
     font-size: 1.25rem;
   }
 
+  .history-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .history-stat-card {
+    padding: 14px;
+    gap: 12px;
+    justify-content: flex-start;
+    min-height: 80px;
+  }
+
   .stat-icon {
     width: 40px;
     height: 40px;
+    border-radius: 10px;
+  }
+
+  .stat-icon svg {
+    width: 20px;
+    height: 20px;
   }
 
   .stat-value {
-    font-size: 1rem;
+    font-size: 1.125rem;
   }
 
-  .time-block {
-    min-width: 60px;
-  }
-
-  .time-value {
-    font-size: 0.8125rem;
+  .stat-label {
+    font-size: 0.625rem;
+    letter-spacing: 0.5px;
   }
 
   .session-main {
-    padding: 12px 16px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+  }
+
+  .session-times {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .time-block {
+    min-width: 0;
+  }
+
+  .time-value {
+    font-size: 0.875rem;
+  }
+
+  .time-arrow {
+    width: 24px;
+    height: 24px;
+  }
+
+  .session-duration {
+    grid-column: 1;
+    width: fit-content;
+    padding: 6px 12px;
+  }
+
+  .btn-delete-session {
+    grid-column: 2;
+    align-self: center;
   }
 }
