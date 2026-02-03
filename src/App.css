@@ -302,10 +302,21 @@
   transform: scale(1.1);
 }
 
-.stat-icon.total { background: var(--info-subtle); }
-.stat-icon.progress { background: var(--warning-subtle); }
-.stat-icon.completed { background: var(--secondary-subtle); }
-.stat-icon.time { background: var(--primary-subtle); }
+.stat-icon.total {
+  background: var(--info-subtle);
+}
+
+.stat-icon.progress {
+  background: var(--warning-subtle);
+}
+
+.stat-icon.completed {
+  background: var(--secondary-subtle);
+}
+
+.stat-icon.time {
+  background: var(--primary-subtle);
+}
 
 .stat-value {
   font-size: 1.75rem;
@@ -1217,21 +1228,51 @@
   .timer-display {
     min-width: 70px;
   }
-  
+
   .main-nav {
     max-width: 100%;
+    gap: 4px;
+    padding: 4px;
   }
-  
+
   .main-nav-tab {
-    padding: 12px 16px;
-    font-size: 0.875rem;
+    padding: 10px 12px;
+    font-size: 0.8125rem;
+    gap: 6px;
   }
-  
+
   .main-nav-tab svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
   }
 }
+
+/* Ultra-compact mode for main navigation (e.g., iPhone SE) */
+@media (max-width: 360px) {
+  .main-nav {
+    flex-wrap: wrap;
+    border-radius: var(--radius-lg);
+    gap: 2px;
+  }
+
+  .main-nav-tab {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    gap: 4px;
+  }
+
+  .main-nav-tab svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* If even 3 in a row is too much, this ensures they look organized */
+  .main-nav-tab {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
 
 /* ============================================
    Analytics Dashboard
@@ -1611,11 +1652,11 @@
   .charts-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .chart-card.wide {
     grid-column: span 1;
   }
-  
+
   .analytics-summary {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1626,31 +1667,31 @@
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .chart-tabs {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   .chart-tab {
     flex-shrink: 0;
   }
-  
+
   .summary-card {
     padding: 16px;
   }
-  
+
   .summary-icon {
     width: 40px;
     height: 40px;
   }
-  
+
   .summary-icon svg {
     width: 20px;
     height: 20px;
   }
-  
+
   .summary-value {
     font-size: 1.25rem;
   }
@@ -1660,25 +1701,25 @@
   .analytics-summary {
     grid-template-columns: 1fr;
   }
-  
+
   .summary-card {
     flex-direction: row;
   }
-  
+
   .chart-card {
     padding: 16px;
   }
-  
+
   .chart-container {
     min-height: 220px;
   }
-  
+
   .analytics-icon {
     width: 40px;
     height: 40px;
     font-size: 1.25rem;
   }
-  
+
   .analytics-title h2 {
     font-size: 1.25rem;
   }
