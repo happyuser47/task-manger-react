@@ -32,6 +32,138 @@ const HistoryIcon = () => (
   </svg>
 );
 
+const CloseIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+
+const NoteIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/>
+    <line x1="16" y1="17" x2="8" y2="17"/>
+  </svg>
+);
+
+// Checkout Modal Component
+const CheckoutModal = ({ isOpen, onClose, onConfirm, sessionDuration, isProcessing }) => {
+  const [reason, setReason] = useState('');
+  const [selectedQuickOption, setSelectedQuickOption] = useState('');
+
+  const quickOptions = [
+    'Completed daily tasks',
+    'End of shift',
+    'Break time',
+    'Meeting/Call',
+    'Lunch break',
+    'Personal errand',
+    'Technical issues',
+    'Other'
+  ];
+
+  const handleQuickSelect = (option) => {
+    if (option === 'Other') {
+      setSelectedQuickOption(option);
+      setReason('');
+    } else {
+      setSelectedQuickOption(option);
+      setReason(option);
+    }
+  };
+
+  const handleConfirm = () => {
+    onConfirm(reason);
+    setReason('');
+    setSelectedQuickOption('');
+  };
+
+  const handleClose = () => {
+    setReason('');
+    setSelectedQuickOption('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="checkout-modal-overlay" onClick={handleClose}>
+      <div className="checkout-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="checkout-modal-header">
+          <div className="checkout-modal-title">
+            <CheckOutIcon />
+            <h3>End Work Session</h3>
+          </div>
+          <button className="checkout-modal-close" onClick={handleClose}>
+            <CloseIcon />
+          </button>
+        </div>
+
+        <div className="checkout-modal-body">
+          <div className="session-summary">
+            <div className="summary-item">
+              <span className="summary-label">Session Duration</span>
+              <span className="summary-value">{formatDuration(sessionDuration)}</span>
+            </div>
+          </div>
+
+          <div className="reason-section">
+            <label className="reason-label">
+              <NoteIcon />
+              <span>What did you work on? <span className="optional-tag">(Optional)</span></span>
+            </label>
+            
+            <div className="quick-options">
+              {quickOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={`quick-option ${selectedQuickOption === option ? 'selected' : ''}`}
+                  onClick={() => handleQuickSelect(option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              className="reason-textarea"
+              placeholder="Add more details about your work session..."
+              value={selectedQuickOption === 'Other' || !quickOptions.includes(reason) ? reason : ''}
+              onChange={(e) => {
+                setReason(e.target.value);
+                if (e.target.value && selectedQuickOption !== 'Other') {
+                  setSelectedQuickOption('');
+                }
+              }}
+              rows={3}
+              disabled={selectedQuickOption && selectedQuickOption !== 'Other'}
+            />
+          </div>
+        </div>
+
+        <div className="checkout-modal-footer">
+          <button className="btn-cancel" onClick={handleClose} disabled={isProcessing}>
+            Cancel
+          </button>
+          <button className="btn-confirm-checkout" onClick={handleConfirm} disabled={isProcessing}>
+            {isProcessing ? (
+              <div className="mini-spinner"></div>
+            ) : (
+              <>
+                <CheckOutIcon />
+                <span>Confirm Check Out</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const WorkSession = () => {
   const {
     currentSession,
@@ -45,6 +177,7 @@ const WorkSession = () => {
   } = useWorkSession();
 
   const [showHistory, setShowHistory] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleCheckIn = async () => {
@@ -53,10 +186,15 @@ const WorkSession = () => {
     setIsProcessing(false);
   };
 
-  const handleCheckOut = async () => {
+  const handleCheckOutClick = () => {
+    setShowCheckoutModal(true);
+  };
+
+  const handleCheckOutConfirm = async (reason) => {
     setIsProcessing(true);
-    await checkOut();
+    await checkOut(reason);
     setIsProcessing(false);
+    setShowCheckoutModal(false);
   };
 
   if (loading) {
@@ -88,7 +226,7 @@ const WorkSession = () => {
           </div>
           <button 
             className="btn-checkout"
-            onClick={handleCheckOut}
+            onClick={handleCheckOutClick}
             disabled={isProcessing}
           >
             {isProcessing ? (
@@ -143,7 +281,7 @@ const WorkSession = () => {
             </div>
           ) : (
             <div className="history-list">
-              {todaySessions.map((session, index) => {
+              {todaySessions.map((session) => {
                 const isActive = !session.check_out;
                 const checkInTime = new Date(session.check_in).getTime();
                 const checkOutTime = session.check_out 
@@ -153,12 +291,20 @@ const WorkSession = () => {
                 
                 return (
                   <div key={session.id} className={`history-item ${isActive ? 'active' : ''}`}>
-                    <div className="history-item-times">
-                      <span className="history-in">{formatTime(session.check_in)}</span>
-                      <span className="history-separator">→</span>
-                      <span className="history-out">
-                        {session.check_out ? formatTime(session.check_out) : 'Now'}
-                      </span>
+                    <div className="history-item-content">
+                      <div className="history-item-times">
+                        <span className="history-in">{formatTime(session.check_in)}</span>
+                        <span className="history-separator">→</span>
+                        <span className="history-out">
+                          {session.check_out ? formatTime(session.check_out) : 'Now'}
+                        </span>
+                      </div>
+                      {session.reason && (
+                        <div className="history-item-reason">
+                          <NoteIcon />
+                          <span>{session.reason}</span>
+                        </div>
+                      )}
                     </div>
                     <div className="history-item-duration">
                       {isActive && <span className="live-dot"></span>}
@@ -171,6 +317,15 @@ const WorkSession = () => {
           )}
         </div>
       )}
+
+      {/* Checkout Modal */}
+      <CheckoutModal
+        isOpen={showCheckoutModal}
+        onClose={() => setShowCheckoutModal(false)}
+        onConfirm={handleCheckOutConfirm}
+        sessionDuration={sessionDuration}
+        isProcessing={isProcessing}
+      />
     </div>
   );
 };
