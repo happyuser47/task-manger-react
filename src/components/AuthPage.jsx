@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../hooks/useTheme';
+import whiteLogo from '../assets/White_logo.png';
+import blackLogo from '../assets/Black_logo.png';
 import './AuthPage.css';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -91,10 +95,7 @@ const AuthPage = () => {
         <div className="auth-container">
           <div className="auth-header">
             <div className="auth-logo">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
+              <img src={theme === 'dark' ? whiteLogo : blackLogo} alt="FocusFlow Logo" className="auth-logo-img" />
             </div>
             <h1>Reset Password</h1>
             <p>Enter your email to receive a reset link</p>
@@ -157,10 +158,7 @@ const AuthPage = () => {
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
+            <img src={theme === 'dark' ? whiteLogo : blackLogo} alt="FocusFlow Logo" className="auth-logo-img" />
           </div>
           <h1>FocusFlow</h1>
           <p>{isLogin ? 'Welcome back! Sign in to continue' : 'Create an account to get started'}</p>

@@ -32,6 +32,28 @@
   z-index: 1;
 }
 
+.main-logo-container {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1000px;
+}
+
+.header-main-logo {
+  width: auto;
+  height: 120px;
+  max-width: 280px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.1));
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+}
+
+.header-main-logo:hover {
+  transform: scale(1.05) rotate(1deg);
+}
+
 .header-badge {
   display: inline-flex;
   align-items: center;
@@ -47,11 +69,6 @@
   letter-spacing: 0.5px;
   margin-bottom: 20px;
   animation: fadeIn 0.5s ease-out;
-}
-
-.header-badge svg {
-  width: 14px;
-  height: 14px;
 }
 
 .header h1 {
@@ -1221,6 +1238,11 @@
 @media (max-width: 480px) {
   .header h1 {
     font-size: 1.75rem;
+  }
+
+  .header-main-logo {
+    height: 80px;
+    max-width: 200px;
   }
 
   .stat-card {

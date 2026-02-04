@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 import ThemeToggle from '../components/ThemeToggle';
+import whiteLogo from '../assets/White_logo.png';
+import blackLogo from '../assets/Black_logo.png';
 import './Auth.css';
 
 const Signup = () => {
@@ -67,10 +69,7 @@ const Signup = () => {
         <div className="auth-container">
           <div className="auth-logo">
             <div className="logo-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
+              <img src={theme === 'dark' ? whiteLogo : blackLogo} alt="FocusFlow Logo" />
             </div>
             <span className="logo-text">FocusFlow</span>
           </div>

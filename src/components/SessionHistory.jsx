@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useWorkSessionContext } from '../contexts/WorkSessionContext';
 import { formatDuration, formatTime } from '../hooks/useWorkSession';
+import Loader from './Loader';
 import './SessionHistory.css';
 
 // Icons
@@ -319,10 +320,7 @@ const SessionHistory = () => {
       {/* Sessions List */}
       <div className="history-content">
         {historyLoading ? (
-          <div className="history-loading-state">
-            <div className="loading-spinner"></div>
-            <p>Loading sessions...</p>
-          </div>
+          <Loader inline message="Loading sessions..." />
         ) : allSessions.length === 0 ? (
           <div className="history-empty-state">
             <div className="empty-icon">

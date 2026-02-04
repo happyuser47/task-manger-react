@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWorkSessionContext } from '../contexts/WorkSessionContext';
 import { formatDuration, formatTime } from '../hooks/useWorkSession';
+import Loader from './Loader';
 import './WorkSession.css';
 
 const ClockIcon = () => (
@@ -199,15 +200,6 @@ const WorkSession = () => {
     setShowCheckoutModal(false);
   };
 
-  if (loading) {
-    return (
-      <div className="work-session">
-        <div className="work-session-loading">
-          <div className="mini-spinner"></div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="work-session">

@@ -1,5 +1,7 @@
 import React from 'react';
 import ThemeToggle from './ThemeToggle';
+import whiteLogo from '../assets/White_logo.png';
+import blackLogo from '../assets/Black_logo.png';
 
 const Header = ({ theme, onToggleTheme, children }) => {
   return (
@@ -10,11 +12,16 @@ const Header = ({ theme, onToggleTheme, children }) => {
       </div>
 
       <div className="header-content">
+        <div className="main-logo-container">
+          <img
+            src={theme === 'dark' ? whiteLogo : blackLogo}
+            alt="FocusFlow Logo"
+            className="header-main-logo"
+          />
+        </div>
+
         <div className="header-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-          </svg>
-          Elite Focus
+          Laser Focus
         </div>
 
         <h1>FocusFlow</h1>
