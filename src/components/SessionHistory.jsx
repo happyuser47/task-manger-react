@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useWorkSession, formatDuration, formatTime } from '../hooks/useWorkSession';
+import { useWorkSessionContext } from '../contexts/WorkSessionContext';
+import { formatDuration, formatTime } from '../hooks/useWorkSession';
 import './SessionHistory.css';
 
 // Icons
@@ -74,7 +75,7 @@ const SessionHistory = () => {
     fetchSessionHistory,
     deleteSession,
     deleteSessionsInRange,
-  } = useWorkSession();
+  } = useWorkSessionContext();
 
   const [activeFilter, setActiveFilter] = useState('week');
   const [deleteConfirm, setDeleteConfirm] = useState(null);

@@ -14,7 +14,7 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { signup } = useAuth();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -23,26 +23,26 @@ const Signup = () => {
     e.preventDefault();
     setError('');
     setInfo('');
-    
+
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
     }
-    
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
-    
+
     setLoading(true);
-    
+
     const result = await signup(email, password, name);
-    
+
     if (result.success) {
       if (result.message) {
         // Email confirmation required
@@ -53,7 +53,7 @@ const Signup = () => {
     } else {
       setError(result.error);
     }
-    
+
     setLoading(false);
   };
 
@@ -62,7 +62,7 @@ const Signup = () => {
       <div className="auth-theme-toggle">
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
-      
+
       <div className="auth-left">
         <div className="auth-container">
           <div className="auth-logo">
@@ -72,7 +72,7 @@ const Signup = () => {
                 <polyline points="12 6 12 12 16 14" />
               </svg>
             </div>
-            <span className="logo-text">TaskTracker Pro</span>
+            <span className="logo-text">FocusFlow</span>
           </div>
 
           <div className="auth-header">
@@ -91,7 +91,7 @@ const Signup = () => {
                 {error}
               </div>
             )}
-            
+
             {info && (
               <div className="auth-info">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -223,7 +223,7 @@ const Signup = () => {
           <div className="showcase-content">
             <h2>Join TaskTracker Pro</h2>
             <p>Get started with the most powerful task management tool designed for productivity enthusiasts.</p>
-            
+
             <div className="showcase-features">
               <div className="showcase-feature">
                 <div className="feature-icon">
@@ -236,7 +236,7 @@ const Signup = () => {
                   <p>Your data is always protected</p>
                 </div>
               </div>
-              
+
               <div className="showcase-feature">
                 <div className="feature-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -248,7 +248,7 @@ const Signup = () => {
                   <p>Optimized for performance</p>
                 </div>
               </div>
-              
+
               <div className="showcase-feature">
                 <div className="feature-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -264,7 +264,7 @@ const Signup = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="showcase-decoration">
             <div className="decoration-circle circle-1"></div>
             <div className="decoration-circle circle-2"></div>

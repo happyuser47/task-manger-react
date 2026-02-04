@@ -1,50 +1,51 @@
 import React, { useState } from 'react';
-import { useWorkSession, formatDuration, formatTime } from '../hooks/useWorkSession';
+import { useWorkSessionContext } from '../contexts/WorkSessionContext';
+import { formatDuration, formatTime } from '../hooks/useWorkSession';
 import './WorkSession.css';
 
 const ClockIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10"/>
-    <polyline points="12 6 12 12 16 14"/>
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
   </svg>
 );
 
 const CheckInIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-    <polyline points="10 17 15 12 10 7"/>
-    <line x1="15" y1="12" x2="3" y2="12"/>
+    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+    <polyline points="10 17 15 12 10 7" />
+    <line x1="15" y1="12" x2="3" y2="12" />
   </svg>
 );
 
 const CheckOutIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-    <polyline points="16 17 21 12 16 7"/>
-    <line x1="21" y1="12" x2="9" y2="12"/>
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
 
 const HistoryIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10"/>
-    <polyline points="12 6 12 12 16 10"/>
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 10" />
   </svg>
 );
 
 const CloseIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="18" y1="6" x2="6" y2="18"/>
-    <line x1="6" y1="6" x2="18" y2="18"/>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
 const NoteIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-    <polyline points="14 2 14 8 20 8"/>
-    <line x1="16" y1="13" x2="8" y2="13"/>
-    <line x1="16" y1="17" x2="8" y2="17"/>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
   </svg>
 );
 
@@ -56,6 +57,7 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, sessionDuration, isProcessi
   const quickOptions = [
     'Completed daily tasks',
     'End of shift',
+    'Namaz',
     'Break time',
     'Meeting/Call',
     'Lunch break',
@@ -114,7 +116,7 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, sessionDuration, isProcessi
               <NoteIcon />
               <span>What did you work on? <span className="optional-tag">(Optional)</span></span>
             </label>
-            
+
             <div className="quick-options">
               {quickOptions.map((option) => (
                 <button
@@ -174,7 +176,7 @@ const WorkSession = () => {
     checkIn,
     checkOut,
     getTotalTimeToday,
-  } = useWorkSession();
+  } = useWorkSessionContext();
 
   const [showHistory, setShowHistory] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -224,7 +226,7 @@ const WorkSession = () => {
               In: {formatTime(currentSession?.check_in)}
             </div>
           </div>
-          <button 
+          <button
             className="btn-checkout"
             onClick={handleCheckOutClick}
             disabled={isProcessing}
@@ -241,7 +243,7 @@ const WorkSession = () => {
         </div>
       ) : (
         <div className="session-inactive">
-          <button 
+          <button
             className="btn-checkin"
             onClick={handleCheckIn}
             disabled={isProcessing}
@@ -258,7 +260,7 @@ const WorkSession = () => {
         </div>
       )}
 
-      <button 
+      <button
         className="btn-history"
         onClick={() => setShowHistory(!showHistory)}
         title="Today's Sessions"
@@ -274,7 +276,7 @@ const WorkSession = () => {
               Total: <strong>{formatDuration(getTotalTimeToday())}</strong>
             </div>
           </div>
-          
+
           {todaySessions.length === 0 ? (
             <div className="history-empty">
               <p>No sessions today</p>
@@ -284,11 +286,11 @@ const WorkSession = () => {
               {todaySessions.map((session) => {
                 const isActive = !session.check_out;
                 const checkInTime = new Date(session.check_in).getTime();
-                const checkOutTime = session.check_out 
-                  ? new Date(session.check_out).getTime() 
+                const checkOutTime = session.check_out
+                  ? new Date(session.check_out).getTime()
                   : Date.now();
                 const duration = Math.floor((checkOutTime - checkInTime) / 1000);
-                
+
                 return (
                   <div key={session.id} className={`history-item ${isActive ? 'active' : ''}`}>
                     <div className="history-item-content">

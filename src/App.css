@@ -97,10 +97,12 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   margin-bottom: 32px;
-  max-width: 400px;
+  max-width: 420px;
   margin-left: auto;
   margin-right: auto;
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  /* Prevent tabs from wrapping outside rounded corners */
 }
 
 .main-nav-tab {
@@ -109,10 +111,12 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 14px 24px;
+  padding: 12px 20px;
   background: transparent;
-  border: none;
-  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  /* Placeholder to prevent shift */
+  border-radius: calc(var(--radius-xl) - 6px);
+  /* Perfectly nested radius */
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 0.9375rem;
@@ -120,7 +124,9 @@
   font-family: inherit;
   transition: all var(--transition-base);
   position: relative;
+  outline: none;
 }
+
 
 .main-nav-tab svg {
   width: 20px;
@@ -136,8 +142,14 @@
 .main-nav-tab.active {
   background: var(--gradient-primary);
   color: white;
-  box-shadow: var(--shadow-md), 0 4px 14px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+  outline: none;
 }
+
+.main-nav-tab:focus {
+  outline: none;
+}
+
 
 .nav-badge {
   display: inline-flex;

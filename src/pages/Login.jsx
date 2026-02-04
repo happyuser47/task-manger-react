@@ -11,7 +11,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -19,22 +19,22 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
     }
-    
+
     setLoading(true);
-    
+
     const result = await login(email, password);
-    
+
     if (result.success) {
       navigate('/dashboard', { replace: true });
     } else {
       setError(result.error);
     }
-    
+
     setLoading(false);
   };
 
@@ -43,7 +43,7 @@ const Login = () => {
       <div className="auth-theme-toggle">
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
-      
+
       <div className="auth-left">
         <div className="auth-container">
           <div className="auth-logo">
@@ -53,7 +53,7 @@ const Login = () => {
                 <polyline points="12 6 12 12 16 14" />
               </svg>
             </div>
-            <span className="logo-text">TaskTracker Pro</span>
+            <span className="logo-text">FocusFlow</span>
           </div>
 
           <div className="auth-header">
@@ -155,7 +155,7 @@ const Login = () => {
           <div className="showcase-content">
             <h2>Track Your Productivity</h2>
             <p>Manage tasks efficiently, track time, and achieve your goals with our powerful task management system.</p>
-            
+
             <div className="showcase-features">
               <div className="showcase-feature">
                 <div className="feature-icon">
@@ -169,7 +169,7 @@ const Login = () => {
                   <p>Organize and prioritize your tasks</p>
                 </div>
               </div>
-              
+
               <div className="showcase-feature">
                 <div className="feature-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -182,7 +182,7 @@ const Login = () => {
                   <p>Monitor time spent on each task</p>
                 </div>
               </div>
-              
+
               <div className="showcase-feature">
                 <div className="feature-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -198,7 +198,7 @@ const Login = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="showcase-decoration">
             <div className="decoration-circle circle-1"></div>
             <div className="decoration-circle circle-2"></div>
