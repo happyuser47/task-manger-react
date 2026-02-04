@@ -97,10 +97,14 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   margin-bottom: 32px;
-  max-width: 420px;
+  max-width: 480px;
+  /* Increased from 420px to prevent overflow */
+  min-width: 320px;
   margin-left: auto;
   margin-right: auto;
   box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+  /* Safety wrap for small viewports */
   /* Removed overflow: hidden to allow the glow to breathe without being cut */
 }
 
@@ -124,6 +128,8 @@
   transition: all var(--transition-base);
   position: relative;
   outline: none;
+  white-space: nowrap;
+  /* Prevent tab text from wrapping internally */
 }
 
 
