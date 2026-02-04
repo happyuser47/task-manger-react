@@ -221,7 +221,7 @@ const Signup = () => {
       <div className="auth-right">
         <div className="auth-showcase">
           <div className="showcase-content">
-            <h2>Join TaskTracker Pro</h2>
+            <h2>Join FocusFlow</h2>
             <p>Get started with the most powerful task management tool designed for productivity enthusiasts.</p>
 
             <div className="showcase-features">

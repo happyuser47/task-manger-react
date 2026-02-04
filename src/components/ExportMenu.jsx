@@ -301,7 +301,7 @@ const ExportMenu = ({ tasks, sessions = [] }) => {
               <th>Date</th>
               <th>Time Window</th>
               <th>Duration</th>
-              <th>Focus Theme</th>
+              <th>Break Reason</th>
             </tr>
           </thead>
           <tbody>

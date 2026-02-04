@@ -1,5 +1,5 @@
 /* ============================================
-   Task Tracker Pro - Professional UI Styles
+   FocusFlow - Professional UI Styles
    ============================================ */
 
 /* App Container */
@@ -101,8 +101,7 @@
   margin-left: auto;
   margin-right: auto;
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  /* Prevent tabs from wrapping outside rounded corners */
+  /* Removed overflow: hidden to allow the glow to breathe without being cut */
 }
 
 .main-nav-tab {
@@ -115,8 +114,8 @@
   background: transparent;
   border: 1px solid transparent;
   /* Placeholder to prevent shift */
-  border-radius: calc(var(--radius-xl) - 6px);
-  /* Perfectly nested radius */
+  border-radius: calc(var(--radius-xl) - 4px);
+  /* Refined for sub-pixel nesting */
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 0.9375rem;
@@ -142,8 +141,11 @@
 .main-nav-tab.active {
   background: var(--gradient-primary);
   color: white;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   outline: none;
+  z-index: 2;
+  /* Ensures the glow is not clipped by boundaries */
 }
 
 .main-nav-tab:focus {
