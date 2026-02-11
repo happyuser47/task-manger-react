@@ -3,70 +3,71 @@ import { formatTime } from '../hooks/useTaskManager';
 
 const PlayIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <polygon points="5 3 19 12 5 21 5 3"/>
+    <polygon points="5 3 19 12 5 21 5 3" />
   </svg>
 );
 
 const PauseIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="6" y="4" width="4" height="16"/>
-    <rect x="14" y="4" width="4" height="16"/>
+    <rect x="6" y="4" width="4" height="16" />
+    <rect x="14" y="4" width="4" height="16" />
   </svg>
 );
 
 const CheckIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-    <polyline points="20 6 9 17 4 12"/>
+    <polyline points="20 6 9 17 4 12" />
   </svg>
 );
 
 const RefreshIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M23 4v6h-6"/>
-    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+    <path d="M23 4v6h-6" />
+    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
   </svg>
 );
 
 const ChevronIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="9 18 15 12 9 6"/>
+    <polyline points="9 18 15 12 9 6" />
   </svg>
 );
 
 const TrashIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="3 6 5 6 21 6"/>
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
   </svg>
 );
 
 const EditIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
 
 const CloseIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="18" y1="6" x2="6" y2="18"/>
-    <line x1="6" y1="6" x2="18" y2="18"/>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
-const TaskCard = ({ 
-  task, 
-  onStart, 
-  onStop, 
-  onComplete, 
-  onRestart, 
+const TaskCard = ({
+  task,
+  onStart,
+  onStop,
+  onComplete,
+  onRestart,
   onDelete,
-  onUpdate 
+  onUpdate
 }) => {
   const [showAttempts, setShowAttempts] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(task.name);
+  const [editDescription, setEditDescription] = useState(task.description || '');
 
   const getStatusClass = () => {
     if (task.isExceeding) return 'exceeding';
@@ -101,18 +102,20 @@ const TaskCard = ({
 
   const handleEdit = () => {
     setEditName(task.name);
+    setEditDescription(task.description || '');
     setIsEditing(true);
   };
 
   const handleSaveEdit = () => {
-    if (editName.trim() && editName.trim() !== task.name) {
-      onUpdate(task.id, editName.trim());
+    if (editName.trim()) {
+      onUpdate(task.id, editName.trim(), editDescription.trim());
     }
     setIsEditing(false);
   };
 
   const handleCancelEdit = () => {
     setEditName(task.name);
+    setEditDescription(task.description || '');
     setIsEditing(false);
   };
 
@@ -136,55 +139,72 @@ const TaskCard = ({
         <div className="task-info">
           {isEditing ? (
             <div className="task-edit-form">
-              <input
-                type="text"
-                className="task-edit-input"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                onKeyDown={handleKeyDown}
-                autoFocus
-              />
-              <button 
-                className="btn btn-success btn-xs"
-                onClick={handleSaveEdit}
-                title="Save"
-              >
-                <CheckIcon />
-              </button>
-              <button 
-                className="btn btn-secondary btn-xs"
-                onClick={handleCancelEdit}
-                title="Cancel"
-              >
-                <CloseIcon />
-              </button>
+              <div className="edit-inputs">
+                <input
+                  type="text"
+                  className="task-edit-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  autoFocus
+                  placeholder="Task name"
+                />
+                <textarea
+                  className="task-edit-description"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Task description"
+                  rows={2}
+                />
+              </div>
+              <div className="edit-actions">
+                <button
+                  className="btn btn-success btn-xs"
+                  onClick={handleSaveEdit}
+                  title="Save"
+                >
+                  <CheckIcon />
+                </button>
+                <button
+                  className="btn btn-secondary btn-xs"
+                  onClick={handleCancelEdit}
+                  title="Cancel"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
             </div>
           ) : (
-            <>
-              <h3 className="task-name" onDoubleClick={handleEdit}>{task.name}</h3>
-              <button 
-                className="task-edit-btn"
-                onClick={handleEdit}
-                title="Edit task name"
-              >
-                <EditIcon />
-              </button>
-            </>
+            <div className="task-name-wrapper">
+              <div className="task-title-row">
+                <h3 className="task-name" onDoubleClick={handleEdit}>{task.name}</h3>
+                <button
+                  className="task-edit-btn"
+                  onClick={handleEdit}
+                  title="Edit task"
+                >
+                  <EditIcon />
+                </button>
+              </div>
+              {task.description && (
+                <p className="task-card-description">{task.description}</p>
+              )}
+            </div>
           )}
           {!isEditing && getStatusBadge()}
         </div>
-        
+
         {!isEditing && (
           confirmDelete ? (
             <div className="delete-confirm">
               <span className="delete-confirm-text">Delete?</span>
-              <button 
+              <button
                 className="btn btn-danger btn-sm"
                 onClick={handleDelete}
               >
                 Yes
               </button>
-              <button 
+              <button
                 className="btn btn-secondary btn-sm"
                 onClick={() => setConfirmDelete(false)}
               >
@@ -192,8 +212,8 @@ const TaskCard = ({
               </button>
             </div>
           ) : (
-            <button 
-              className="task-delete" 
+            <button
+              className="task-delete"
               onClick={handleDelete}
               title="Delete task"
             >
@@ -211,14 +231,14 @@ const TaskCard = ({
               {formatTime(task.currentTime)}
             </span>
           </div>
-          
+
           <div className="timer-display">
             <span className="timer-label">Best</span>
             <span className="timer-value best">
               {task.bestTime !== null ? formatTime(task.bestTime) : '--:--'}
             </span>
           </div>
-          
+
           <div className="timer-display">
             <span className="timer-label">Attempts</span>
             <span className="timer-value">
@@ -229,23 +249,23 @@ const TaskCard = ({
 
         <div className="task-actions">
           {task.status === 'idle' && (
-            <button 
+            <button
               className="btn btn-success btn-sm"
               onClick={() => onStart(task.id)}
             >
               <PlayIcon /> Start
             </button>
           )}
-          
+
           {task.status === 'running' && (
             <>
-              <button 
+              <button
                 className="btn btn-secondary btn-sm"
                 onClick={() => onStop(task.id)}
               >
                 <PauseIcon /> Pause
               </button>
-              <button 
+              <button
                 className="btn btn-success btn-sm"
                 onClick={() => onComplete(task.id)}
               >
@@ -253,9 +273,9 @@ const TaskCard = ({
               </button>
             </>
           )}
-          
+
           {task.status === 'completed' && (
-            <button 
+            <button
               className="btn btn-primary btn-sm"
               onClick={() => onRestart(task.id)}
             >
@@ -268,7 +288,7 @@ const TaskCard = ({
       {/* Progress bar for running tasks with best time */}
       {task.status === 'running' && task.bestTime !== null && (
         <div className="progress-bar">
-          <div 
+          <div
             className={`progress-fill ${task.isExceeding ? 'exceeding' : ''}`}
             style={{ width: `${getProgressWidth()}%` }}
           />
@@ -278,14 +298,14 @@ const TaskCard = ({
       {/* Attempt History */}
       {task.attempts.length > 0 && (
         <div className="attempt-history">
-          <button 
+          <button
             className={`attempt-toggle ${showAttempts ? 'open' : ''}`}
             onClick={() => setShowAttempts(!showAttempts)}
           >
             <ChevronIcon />
             View {task.attempts.length} attempt{task.attempts.length > 1 ? 's' : ''}
           </button>
-          
+
           {showAttempts && (
             <div className="attempt-list">
               {task.attempts.map((time, index) => (

@@ -40,14 +40,14 @@ export const useTaskManager = () => {
           // Check if task was running (has started_at)
           const startedAt = task.started_at ? new Date(task.started_at).getTime() : null;
           const isRunning = startedAt && !task.completed;
-          
+
           // Calculate current elapsed time if running
           let currentTime = task.elapsed_time || 0;
           if (isRunning) {
             const elapsedSinceStart = Math.floor((Date.now() - startedAt) / 1000);
             currentTime = (task.elapsed_time || 0) + elapsedSinceStart;
           }
-          
+
           return {
             id: task.id,
             name: task.title,
@@ -57,6 +57,7 @@ export const useTaskManager = () => {
             attempts: task.attempts || [],
             isExceeding: false,
             startedAt: startedAt,
+            description: task.description || '',
             createdAt: new Date(task.created_at).getTime(),
             completed: task.completed,
           };
@@ -71,7 +72,7 @@ export const useTaskManager = () => {
     // Subscribe to realtime changes
     const subscription = supabase
       .channel('tasks_changes')
-      .on('postgres_changes', 
+      .on('postgres_changes',
         { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${user.id}` },
         (payload) => {
           if (payload.eventType === 'INSERT') {
@@ -84,6 +85,7 @@ export const useTaskManager = () => {
               attempts: payload.new.attempts || [],
               isExceeding: false,
               startedAt: null,
+              description: payload.new.description || '',
               createdAt: new Date(payload.new.created_at).getTime(),
               completed: payload.new.completed,
             };
@@ -96,9 +98,12 @@ export const useTaskManager = () => {
                 return {
                   ...t,
                   name: payload.new.title,
-                  completed: payload.new.completed,                  currentTime: payload.new.elapsed_time ?? t.currentTime,
+                  completed: payload.new.completed,
+                  currentTime: payload.new.elapsed_time ?? t.currentTime,
                   bestTime: payload.new.best_time ?? t.bestTime,
-                  attempts: payload.new.attempts ?? t.attempts,                  status: payload.new.completed ? 'completed' : t.status,
+                  attempts: payload.new.attempts ?? t.attempts,
+                  description: payload.new.description ?? t.description,
+                  status: payload.new.completed ? 'completed' : t.status,
                 };
               }
               return t;
@@ -123,7 +128,7 @@ export const useTaskManager = () => {
       }
       return [...prev, { id, type, title, message, dedupKey }];
     });
-    
+
     // Auto remove after 4 seconds
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
@@ -136,16 +141,17 @@ export const useTaskManager = () => {
   }, []);
 
   // Add a new task
-  const addTask = useCallback(async (name) => {
+  const addTask = useCallback(async (name, description = '') => {
     if (!name.trim() || !user) return;
-    
+
     const { data, error } = await supabase
       .from('tasks')
       .insert([
-        { 
-          user_id: user.id, 
-          title: name.trim(), 
-          completed: false 
+        {
+          user_id: user.id,
+          title: name.trim(),
+          description: description.trim(),
+          completed: false
         }
       ])
       .select()
@@ -153,7 +159,7 @@ export const useTaskManager = () => {
 
     if (error) {
       console.error('Error adding task:', error);
-      addNotification('warning', 'Error', 'Failed to add task');
+      addNotification('warning', 'Error', `Failed to add task: ${error.message}`);
     } else if (data) {
       // Add to local state immediately
       const newTask = {
@@ -165,6 +171,7 @@ export const useTaskManager = () => {
         attempts: [],
         isExceeding: false,
         startedAt: null,
+        description: data.description || '',
         createdAt: new Date(data.created_at).getTime(),
         completed: data.completed,
       };
@@ -176,13 +183,13 @@ export const useTaskManager = () => {
   // Delete a task
   const deleteTask = useCallback(async (id) => {
     if (!user) return;
-    
+
     const task = tasks.find(t => t.id === id);
     const taskName = task?.name || 'Task';
-    
+
     // Immediately remove from local state for better UX
     setTasks(prev => prev.filter(t => t.id !== id));
-    
+
     const { data, error, count } = await supabase
       .from('tasks')
       .delete()
@@ -214,45 +221,54 @@ export const useTaskManager = () => {
     }
   }, [user, tasks, addNotification]);
 
-  // Update a task's name
-  const updateTask = useCallback(async (id, newName) => {
-    if (!user || !newName.trim()) return;
-    
-    const trimmedName = newName.trim();
+  // Update a task's name and description
+  const updateTask = useCallback(async (id, newName, newDescription) => {
+    if (!user) return;
+
     const task = tasks.find(t => t.id === id);
-    const oldName = task?.name || '';
-    
+    if (!task) return;
+
+    const oldName = task.name;
+    const oldDescription = task.description;
+
+    const finalName = newName !== undefined ? newName.trim() : oldName;
+    const finalDescription = newDescription !== undefined ? newDescription.trim() : oldDescription;
+
     // Optimistic update
-    setTasks(prev => prev.map(t => 
-      t.id === id ? { ...t, name: trimmedName } : t
+    setTasks(prev => prev.map(t =>
+      t.id === id ? { ...t, name: finalName, description: finalDescription } : t
     ));
-    
+
+    const updates = {};
+    if (newName !== undefined) updates.title = finalName;
+    if (newDescription !== undefined) updates.description = finalDescription;
+
     const { error } = await supabase
       .from('tasks')
-      .update({ title: trimmedName })
+      .update(updates)
       .eq('id', id);
 
     if (error) {
       console.error('Error updating task:', error);
       // Revert on error
-      setTasks(prev => prev.map(t => 
-        t.id === id ? { ...t, name: oldName } : t
+      setTasks(prev => prev.map(t =>
+        t.id === id ? { ...t, name: oldName, description: oldDescription } : t
       ));
-      addNotification('warning', 'Error', 'Failed to update task');
+      addNotification('warning', 'Error', `Failed to update task: ${error.message}`);
     } else {
-      addNotification('success', 'Task Updated', `Task renamed to "${trimmedName}"`);
+      addNotification('success', 'Task Updated', 'Changes saved successfully');
     }
   }, [user, tasks, addNotification]);
 
   // Stop timer for a task and save to Supabase
   const stopTask = useCallback(async (id) => {
     notifiedExceedingRef.current.delete(id);
-    
+
     const task = tasks.find(t => t.id === id);
     if (!task || task.status !== 'running') return;
-    
+
     const currentTime = task.currentTime;
-    
+
     // Update local state immediately
     setTasks(prev => prev.map(t => {
       if (t.id === id) {
@@ -264,16 +280,16 @@ export const useTaskManager = () => {
       }
       return t;
     }));
-    
+
     // Save elapsed time and clear started_at in Supabase
     const { error } = await supabase
       .from('tasks')
-      .update({ 
+      .update({
         elapsed_time: currentTime,
-        started_at: null 
+        started_at: null
       })
       .eq('id', id);
-    
+
     if (error) {
       console.error('Error saving timer state:', error);
     }
@@ -283,7 +299,7 @@ export const useTaskManager = () => {
   const startTask = useCallback(async (id) => {
     const now = Date.now();
     const nowISO = new Date(now).toISOString();
-    
+
     // First, stop any other running tasks locally and in Supabase
     const runningTask = tasks.find(t => t.status === 'running' && t.id !== id);
     if (runningTask) {
@@ -300,7 +316,7 @@ export const useTaskManager = () => {
         .update({ elapsed_time: currentTime, started_at: null })
         .eq('id', runningTask.id);
     }
-    
+
     // Update local state immediately
     setTasks(prev => prev.map(task => {
       if (task.id === id) {
@@ -313,13 +329,13 @@ export const useTaskManager = () => {
       }
       return task;
     }));
-    
+
     // Save to Supabase
     const { error } = await supabase
       .from('tasks')
       .update({ started_at: nowISO })
       .eq('id', id);
-    
+
     if (error) {
       console.error('Error starting task:', error);
     }
@@ -328,22 +344,22 @@ export const useTaskManager = () => {
   // Complete a task
   const completeTask = useCallback(async (id) => {
     if (!user) return;
-    
+
     notifiedExceedingRef.current.delete(id);
     const task = tasks.find(t => t.id === id);
-    
+
     if (!task) return;
-    
+
     const finalTime = task.currentTime;
     const newAttempts = [...task.attempts, finalTime];
-    const newBestTime = task.bestTime === null 
-      ? finalTime 
+    const newBestTime = task.bestTime === null
+      ? finalTime
       : Math.min(task.bestTime, finalTime);
 
     // Update in Supabase with timer data
     const { error } = await supabase
       .from('tasks')
-      .update({ 
+      .update({
         completed: true,
         elapsed_time: 0,
         started_at: null,
@@ -375,10 +391,10 @@ export const useTaskManager = () => {
         }
         return t;
       }));
-      
+
       addNotification(
-        'success', 
-        'Task Completed!', 
+        'success',
+        'Task Completed!',
         `"${task.name}" completed in ${formatTime(finalTime)}`,
         `complete-${id}-${Date.now()}`
       );
@@ -388,10 +404,10 @@ export const useTaskManager = () => {
   // Restart a completed task
   const restartTask = useCallback(async (id) => {
     if (!user) return;
-    
+
     const now = Date.now();
     const nowISO = new Date(now).toISOString();
-    
+
     // First, stop any other running tasks inline to avoid circular dependency
     const runningTask = tasks.find(t => t.status === 'running' && t.id !== id);
     if (runningTask) {
@@ -407,12 +423,12 @@ export const useTaskManager = () => {
         .update({ elapsed_time: currentTime, started_at: null })
         .eq('id', runningTask.id);
     }
-    
+
     // Update in Supabase to mark as not completed, reset elapsed_time, and set started_at
     const { error } = await supabase
       .from('tasks')
-      .update({ 
-        completed: false, 
+      .update({
+        completed: false,
         elapsed_time: 0,
         started_at: nowISO
       })
@@ -443,20 +459,20 @@ export const useTaskManager = () => {
   const updateTimers = useCallback(() => {
     setTasks(prev => {
       let shouldNotify = null;
-      
+
       const updatedTasks = prev.map(task => {
         if (task.status === 'running' && task.startedAt) {
           const newCurrentTime = task.currentTime + 1;
-          
+
           // Check if exceeding best time
           const isExceeding = task.bestTime !== null && newCurrentTime > task.bestTime;
-          
+
           // Check if we should show notification (first time exceeding)
           if (isExceeding && !task.isExceeding && !notifiedExceedingRef.current.has(task.id)) {
             shouldNotify = task;
             notifiedExceedingRef.current.add(task.id);
           }
-          
+
           const updatedTask = {
             ...task,
             currentTime: newCurrentTime,
@@ -467,7 +483,7 @@ export const useTaskManager = () => {
         }
         return task;
       });
-      
+
       // Show notification outside of state update
       if (shouldNotify) {
         setTimeout(() => {
@@ -479,7 +495,7 @@ export const useTaskManager = () => {
           );
         }, 0);
       }
-      
+
       return updatedTasks;
     });
   }, [addNotification]);
@@ -519,7 +535,7 @@ export const formatTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-  
+
   if (hrs > 0) {
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
