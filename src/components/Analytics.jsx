@@ -4,6 +4,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { formatTime } from '../hooks/useTaskManager';
+import { useSettingsContext } from '../contexts/SettingsContext';
 
 const COLORS = {
   primary: '#8b5cf6',
@@ -42,20 +43,26 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const Analytics = ({ sessions }) => {
   const [activeTab, setActiveTab] = useState('daily');
+  const { getLocalTime } = useSettingsContext();
 
   const analyticsData = useMemo(() => {
     // Basic formatting helpers
     const validSessions = (sessions || []).filter(s => s.check_out && s.duration);
 
+    const getLocalKey = (date) => {
+      const d = getLocalTime(date);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
     // 1. Daily Data (Last 14 days)
     const dailyMap = {};
-    const today = new Date();
+    const today = getLocalTime();
     today.setHours(0, 0, 0, 0);
 
     for (let i = 13; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       dailyMap[key] = {
         name: d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
         date: d,
@@ -72,7 +79,7 @@ const Analytics = ({ sessions }) => {
       const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
       const startOfWeek = new Date(d.setDate(diff));
       startOfWeek.setHours(0, 0, 0, 0);
-      const key = startOfWeek.toISOString().split('T')[0];
+      const key = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
       weeklyMap[key] = {
         name: `Wk of ${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
         date: startOfWeek,
@@ -100,23 +107,24 @@ const Analytics = ({ sessions }) => {
 
     validSessions.forEach(session => {
       const sessionDate = new Date(session.check_in);
+      const localSessionDate = getLocalTime(sessionDate);
       const duration = session.duration || 0;
       totalWorkTime += duration;
 
       // Daily
-      const dayKey = sessionDate.toISOString().split('T')[0];
+      const dayKey = `${localSessionDate.getFullYear()}-${String(localSessionDate.getMonth() + 1).padStart(2, '0')}-${String(localSessionDate.getDate()).padStart(2, '0')}`;
       if (dailyMap[dayKey]) dailyMap[dayKey].workTime += duration;
 
       // Weekly
-      const day = sessionDate.getDay();
-      const diff = sessionDate.getDate() - day + (day === 0 ? -6 : 1);
-      const startOfWeek = new Date(new Date(sessionDate).setDate(diff));
+      const day = localSessionDate.getDay();
+      const diff = localSessionDate.getDate() - day + (day === 0 ? -6 : 1);
+      const startOfWeek = new Date(new Date(localSessionDate).setDate(diff));
       startOfWeek.setHours(0, 0, 0, 0);
-      const weekKey = startOfWeek.toISOString().split('T')[0];
+      const weekKey = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
       if (weeklyMap[weekKey]) weeklyMap[weekKey].workTime += duration;
 
       // Monthly
-      const monthKey = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, '0')}`;
+      const monthKey = `${localSessionDate.getFullYear()}-${String(localSessionDate.getMonth() + 1).padStart(2, '0')}`;
       if (monthlyMap[monthKey]) monthlyMap[monthKey].workTime += duration;
     });
 

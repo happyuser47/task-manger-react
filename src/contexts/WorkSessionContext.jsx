@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettingsContext } from '../contexts/SettingsContext';
 
 const WorkSessionContext = createContext();
 
 export const WorkSessionProvider = ({ children }) => {
     const { user } = useAuth();
+    const { getStartOfDayUTC, getLocalTime, timezone } = useSettingsContext();
     const [currentSession, setCurrentSession] = useState(null);
     const [sessionDuration, setSessionDuration] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -32,21 +34,16 @@ export const WorkSessionProvider = ({ children }) => {
             .order('check_in', { ascending: false });
 
         // Apply date filters
-        const now = new Date();
         if (filter === 'today') {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            query = query.gte('check_in', today.toISOString());
+            query = query.gte('check_in', getStartOfDayUTC().toISOString());
         } else if (filter === 'week') {
-            const weekAgo = new Date(now);
+            const weekAgo = new Date();
             weekAgo.setDate(weekAgo.getDate() - 7);
-            weekAgo.setHours(0, 0, 0, 0);
-            query = query.gte('check_in', weekAgo.toISOString());
+            query = query.gte('check_in', getStartOfDayUTC(weekAgo).toISOString());
         } else if (filter === 'month') {
-            const monthAgo = new Date(now);
+            const monthAgo = new Date();
             monthAgo.setMonth(monthAgo.getMonth() - 1);
-            monthAgo.setHours(0, 0, 0, 0);
-            query = query.gte('check_in', monthAgo.toISOString());
+            query = query.gte('check_in', getStartOfDayUTC(monthAgo).toISOString());
         }
 
         query = query.limit(limit);
@@ -78,7 +75,7 @@ export const WorkSessionProvider = ({ children }) => {
 
         setAllSessions(data || []);
         return { data: data || [], error: null, count };
-    }, [user]);
+    }, [user, getStartOfDayUTC]);
 
     // Fetch active session and today's sessions
     const loadInitialData = useCallback(async () => {
@@ -111,14 +108,11 @@ export const WorkSessionProvider = ({ children }) => {
         }
 
         // Get today's completed sessions
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
         const { data: todayData, error: todayError } = await supabase
             .from('work_sessions')
             .select('*')
             .eq('user_id', user.id)
-            .gte('check_in', today.toISOString())
+            .gte('check_in', getStartOfDayUTC().toISOString())
             .order('check_in', { ascending: false });
 
         if (!todayError && todayData) {
@@ -129,7 +123,12 @@ export const WorkSessionProvider = ({ children }) => {
         await fetchSessionHistory('all');
 
         setLoading(false);
-    }, [user, fetchSessionHistory]);
+    }, [user, fetchSessionHistory, getStartOfDayUTC]);
+
+    // Refresh data when timezone inherently changes bounds
+    useEffect(() => {
+        if (!loading) loadInitialData();
+    }, [timezone]);
 
     useEffect(() => {
         loadInitialData();
@@ -223,19 +222,15 @@ export const WorkSessionProvider = ({ children }) => {
             .not('check_out', 'is', null);
 
         if (range === 'today') {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            query = query.gte('check_in', today.toISOString());
+            query = query.gte('check_in', getStartOfDayUTC().toISOString());
         } else if (range === 'week') {
             const weekAgo = new Date();
             weekAgo.setDate(weekAgo.getDate() - 7);
-            weekAgo.setHours(0, 0, 0, 0);
-            query = query.gte('check_in', weekAgo.toISOString());
+            query = query.gte('check_in', getStartOfDayUTC(weekAgo).toISOString());
         } else if (range === 'month') {
             const monthAgo = new Date();
             monthAgo.setMonth(monthAgo.getMonth() - 1);
-            monthAgo.setHours(0, 0, 0, 0);
-            query = query.gte('check_in', monthAgo.toISOString());
+            query = query.gte('check_in', getStartOfDayUTC(monthAgo).toISOString());
         }
 
         const { error } = await query;
@@ -243,19 +238,17 @@ export const WorkSessionProvider = ({ children }) => {
             await fetchSessionHistory('all');
             // If range covers today, refresh todaySessions too
             if (range === 'all' || range === 'today' || range === 'week' || range === 'month') {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
                 const { data } = await supabase
                     .from('work_sessions')
                     .select('*')
                     .eq('user_id', user.id)
-                    .gte('check_in', today.toISOString());
+                    .gte('check_in', getStartOfDayUTC().toISOString());
                 setTodaySessions(data || []);
             }
             return { success: true };
         }
         return { success: false, error };
-    }, [user, fetchSessionHistory]);
+    }, [user, fetchSessionHistory, getStartOfDayUTC]);
 
     const getTotalTimeToday = useCallback(() => {
         let total = 0;

@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettingsContext } from '../contexts/SettingsContext';
 import { useNavigate } from 'react-router-dom';
 import './UserMenuNew.css';
 
 const UserMenu = () => {
   const { user, logout } = useAuth();
+  const { timezone, updateTimezone } = useSettingsContext();
   const [isOpen, setIsOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
@@ -13,6 +16,7 @@ const UserMenu = () => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsOpen(false);
+        setShowSettings(false);
       }
     };
 
@@ -23,6 +27,7 @@ const UserMenu = () => {
   const handleLogout = () => {
     logout();
     setIsOpen(false);
+    setShowSettings(false);
     navigate('/login', { replace: true });
   };
 
@@ -49,7 +54,7 @@ const UserMenu = () => {
 
   return (
     <div className="user-menu-pro" ref={menuRef}>
-      <button 
+      <button
         className="user-trigger-pro"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
@@ -59,11 +64,11 @@ const UserMenu = () => {
         </div>
         <div className="user-trigger-info">
           <span className="user-trigger-name">{getFirstName()}</span>
-          <svg 
+          <svg
             className={`trigger-arrow ${isOpen ? 'open' : ''}`}
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
             strokeWidth="2.5"
           >
             <polyline points="6 9 12 15 18 9" />
@@ -86,25 +91,31 @@ const UserMenu = () => {
               <span className="status-text">Active</span>
             </div>
           </div>
-          
+
           <div className="dropdown-menu-pro">
-            <button className="dropdown-menu-item">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              <span>Profile Settings</span>
-            </button>
-            
-            <button className="dropdown-menu-item">
+            <button className="dropdown-menu-item" onClick={() => setShowSettings(!showSettings)}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
               <span>Preferences</span>
             </button>
+            {showSettings && (
+              <div className="preferences-panel" style={{ padding: '8px 16px', background: 'var(--bg-tertiary)', margin: '4px 8px', borderRadius: '8px', fontSize: '13px' }}>
+                <div style={{ marginBottom: '8px', color: 'var(--text-secondary)' }}>Timezone</div>
+                <select
+                  value={timezone}
+                  onChange={(e) => updateTimezone(e.target.value)}
+                  style={{ width: '100%', padding: '6px', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}
+                >
+                  {Intl.supportedValuesOf('timeZone').map(tz => (
+                    <option key={tz} value={tz}>{tz}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
-          
+
           <div className="dropdown-footer-pro">
             <button className="logout-btn-pro" onClick={handleLogout}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
