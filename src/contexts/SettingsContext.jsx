@@ -15,7 +15,8 @@ export const SettingsProvider = ({ children }) => {
         }
     };
 
-    const [timezone, setTimezone] = useState(getDefaultTimezone());
+    const [timezone, setTimezone] = useState('auto');
+    const [timeFormat, setTimeFormat] = useState('12h');
 
     // Load from local storage when user changes
     useEffect(() => {
@@ -25,6 +26,7 @@ export const SettingsProvider = ({ children }) => {
                 try {
                     const parsed = JSON.parse(savedSettings);
                     if (parsed.timezone) setTimezone(parsed.timezone);
+                    if (parsed.timeFormat) setTimeFormat(parsed.timeFormat);
                 } catch (e) {
                     console.error("Failed to parse settings", e);
                 }
@@ -34,19 +36,30 @@ export const SettingsProvider = ({ children }) => {
 
     const updateTimezone = (newTz) => {
         setTimezone(newTz);
+        saveSettings({ timezone: newTz });
+    };
+
+    const updateTimeFormat = (newFmt) => {
+        setTimeFormat(newFmt);
+        saveSettings({ timeFormat: newFmt });
+    };
+
+    const saveSettings = (updates) => {
         if (user) {
             const current = localStorage.getItem(`settings_${user.id}`);
             const parsed = current ? JSON.parse(current) : {};
-            localStorage.setItem(`settings_${user.id}`, JSON.stringify({ ...parsed, timezone: newTz }));
+            localStorage.setItem(`settings_${user.id}`, JSON.stringify({ ...parsed, ...updates }));
         }
     };
+
+    // Calculate actual active timezone representing the context
+    const activeTimezone = timezone === 'auto' ? getDefaultTimezone() : timezone;
 
     // Utility to convert any date into a fake "local" Date object matching the selected timezone.
     const getLocalTime = (dateObj = new Date()) => {
         try {
-            return new Date(dateObj.toLocaleString('en-US', { timeZone: timezone }));
+            return new Date(dateObj.toLocaleString('en-US', { timeZone: activeTimezone }));
         } catch (e) {
-            // Fallback for invalid timezones just in case
             return dateObj;
         }
     };
@@ -54,7 +67,7 @@ export const SettingsProvider = ({ children }) => {
     // Get the UTC Date representing Midnight of the current day in the target Timezone
     const getStartOfDayUTC = (dateObj = new Date()) => {
         try {
-            const tzDateStr = dateObj.toLocaleString('en-US', { timeZone: timezone });
+            const tzDateStr = dateObj.toLocaleString('en-US', { timeZone: activeTimezone });
             const tzDate = new Date(tzDateStr);
             const offset = tzDate.getTime() - dateObj.getTime();
 
@@ -67,8 +80,33 @@ export const SettingsProvider = ({ children }) => {
         }
     };
 
+    // Global utility to format specific ISO time points precisely cleanly
+    const formatClockTime = (dateString) => {
+        if (!dateString) return '--:--';
+        try {
+            return new Date(dateString).toLocaleTimeString('en-US', {
+                timeZone: activeTimezone,
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: timeFormat === '12h'
+            });
+        } catch (e) {
+            // fallback gracefully
+            return new Date(dateString).toLocaleTimeString();
+        }
+    };
+
+
     return (
-        <SettingsContext.Provider value={{ timezone, updateTimezone, getLocalTime, getStartOfDayUTC }}>
+        <SettingsContext.Provider value={{
+            timezone,
+            timeFormat,
+            updateTimezone,
+            updateTimeFormat,
+            getLocalTime,
+            getStartOfDayUTC,
+            formatClockTime
+        }}>
             {children}
         </SettingsContext.Provider>
     );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useWorkSessionContext } from '../contexts/WorkSessionContext';
-import { formatDuration, formatTime } from '../hooks/useWorkSession';
+import { useSettingsContext } from '../contexts/SettingsContext';
+import { formatDuration } from '../hooks/useWorkSession';
 import Loader from './Loader';
 import './SessionHistory.css';
 
@@ -77,6 +78,7 @@ const SessionHistory = () => {
     deleteSession,
     deleteSessionsInRange,
   } = useWorkSessionContext();
+  const { formatClockTime, getLocalTime } = useSettingsContext();
 
   const [activeFilter, setActiveFilter] = useState('week');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -158,7 +160,7 @@ const SessionHistory = () => {
   // Group sessions by date
   const groupedSessions = useMemo(() => {
     return allSessions.reduce((groups, session) => {
-      const date = new Date(session.check_in).toLocaleDateString('en-US', {
+      const date = getLocalTime(new Date(session.check_in)).toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -355,7 +357,7 @@ const SessionHistory = () => {
                           <div className="session-times">
                             <div className="time-block">
                               <span className="time-label">Check In</span>
-                              <span className="time-value in">{formatTime(session.check_in)}</span>
+                              <span className="time-value in">{formatClockTime(session.check_in)}</span>
                             </div>
                             <div className="time-arrow">
                               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -365,7 +367,7 @@ const SessionHistory = () => {
                             </div>
                             <div className="time-block">
                               <span className="time-label">Check Out</span>
-                              <span className="time-value out">{formatTime(session.check_out)}</span>
+                              <span className="time-value out">{formatClockTime(session.check_out)}</span>
                             </div>
                           </div>
                           <div className="session-duration">

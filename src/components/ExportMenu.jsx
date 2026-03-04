@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { formatTime } from '../hooks/useTaskManager';
+import { useSettingsContext } from '../contexts/SettingsContext';
 import './ExportMenu.css';
 
 const DownloadIcon = () => (
@@ -53,6 +54,7 @@ const CloseIcon = () => (
 );
 
 const ExportMenu = ({ tasks, sessions = [] }) => {
+  const { formatClockTime, getLocalTime } = useSettingsContext();
   const [isOpen, setIsOpen] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempFormat, setTempFormat] = useState(null);
@@ -130,14 +132,14 @@ const ExportMenu = ({ tasks, sessions = [] }) => {
 
     filteredTasks.forEach(task => {
       const totalTime = task.attempts?.reduce((a, b) => a + b, 0) || 0;
-      csvContent += `TASK,"${task.name}",${task.status},${formatTime(task.currentTime || 0)},${task.bestTime ? formatTime(task.bestTime) : 'N/A'},${task.attempts?.length || 0},${formatTime(totalTime)},${new Date(task.createdAt).toLocaleDateString()}\n`;
+      csvContent += `TASK,"${task.name}",${task.status},${formatTime(task.currentTime || 0)},${task.bestTime ? formatTime(task.bestTime) : 'N/A'},${task.attempts?.length || 0},${formatTime(totalTime)},${getLocalTime(new Date(task.createdAt)).toLocaleDateString()}\n`;
     });
 
     // Sessions CSV
     csvContent += "\nDATA TYPE,CHECK IN,CHECK OUT,DURATION,REASON,DATE\n";
     filteredSessions.forEach(session => {
       const duration = session.duration || 0;
-      csvContent += `SESSION,${new Date(session.check_in).toLocaleTimeString()},${session.check_out ? new Date(session.check_out).toLocaleTimeString() : 'Active'},${formatDurationRaw(duration)},"${session.reason || ''}",${new Date(session.check_in).toLocaleDateString()}\n`;
+      csvContent += `SESSION,${formatClockTime(session.check_in)},${session.check_out ? formatClockTime(session.check_out) : 'Active'},${formatDurationRaw(duration)},"${session.reason || ''}",${getLocalTime(new Date(session.check_in)).toLocaleDateString()}\n`;
     });
 
     downloadFile(csvContent, `export-${startDate}-to-${endDate}.csv`, 'text/csv');
@@ -284,7 +286,7 @@ const ExportMenu = ({ tasks, sessions = [] }) => {
       const totalTime = task.attempts?.reduce((a, b) => a + b, 0) || 0;
       return `
               <tr>
-                <td><strong>${task.name}</strong><br/><small style="color: #94a3b8">${new Date(task.createdAt).toLocaleDateString()}</small></td>
+                <td><strong>${task.name}</strong><br/><small style="color: #94a3b8">${getLocalTime(new Date(task.createdAt)).toLocaleDateString()}</small></td>
                 <td><span class="status status-${task.status.toLowerCase()}">${task.status}</span></td>
                 <td>${formatTime(task.currentTime || 0)}</td>
                 <td>${task.bestTime ? formatTime(task.bestTime) : 'N/A'}</td>
@@ -307,8 +309,8 @@ const ExportMenu = ({ tasks, sessions = [] }) => {
           <tbody>
             ${filteredSessions.map(session => `
               <tr>
-                <td>${new Date(session.check_in).toLocaleDateString()}</td>
-                <td>${new Date(session.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${session.check_out ? new Date(session.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active'}</td>
+                <td>${getLocalTime(new Date(session.check_in)).toLocaleDateString()}</td>
+                <td>${formatClockTime(session.check_in)} - ${session.check_out ? formatClockTime(session.check_out) : 'Active'}</td>
                 <td class="duration">${formatDurationRaw(session.duration || 0)}</td>
                 <td class="reason">${session.reason || 'No specific focus defined'}</td>
               </tr>

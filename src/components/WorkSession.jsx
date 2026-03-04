@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWorkSessionContext } from '../contexts/WorkSessionContext';
-import { formatDuration, formatTime } from '../hooks/useWorkSession';
+import { useSettingsContext } from '../contexts/SettingsContext';
+import { formatDuration } from '../hooks/useWorkSession';
 import Loader from './Loader';
 import './WorkSession.css';
 
@@ -178,6 +179,7 @@ const WorkSession = () => {
     checkOut,
     getTotalTimeToday,
   } = useWorkSessionContext();
+  const { formatClockTime } = useSettingsContext();
 
   const [showHistory, setShowHistory] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -215,7 +217,7 @@ const WorkSession = () => {
               <span className="timer-text">{formatDuration(sessionDuration)}</span>
             </div>
             <div className="session-checkin-time">
-              In: {formatTime(currentSession?.check_in)}
+              In: {formatClockTime(currentSession?.check_in)}
             </div>
           </div>
           <button
@@ -287,10 +289,10 @@ const WorkSession = () => {
                   <div key={session.id} className={`history-item ${isActive ? 'active' : ''}`}>
                     <div className="history-item-content">
                       <div className="history-item-times">
-                        <span className="history-in">{formatTime(session.check_in)}</span>
+                        <span className="history-in">{formatClockTime(session.check_in)}</span>
                         <span className="history-separator">→</span>
                         <span className="history-out">
-                          {session.check_out ? formatTime(session.check_out) : 'Now'}
+                          {session.check_out ? formatClockTime(session.check_out) : 'Now'}
                         </span>
                       </div>
                       {session.reason && (
