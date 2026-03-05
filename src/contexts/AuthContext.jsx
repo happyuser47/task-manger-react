@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }) => {
           id: session.user.id,
           email: session.user.email,
           name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          metadata: session.user.user_metadata || {},
         });
       }
       setLoading(false);
@@ -36,6 +37,7 @@ export const AuthProvider = ({ children }) => {
           id: session.user.id,
           email: session.user.email,
           name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          metadata: session.user.user_metadata || {},
         });
       } else {
         setUser(null);
@@ -53,11 +55,11 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
       });
-      
+
       if (error) {
         return { success: false, error: error.message };
       }
-      
+
       return { success: true, error: null };
     } catch (err) {
       return { success: false, error: 'An unexpected error occurred' };
@@ -76,20 +78,20 @@ export const AuthProvider = ({ children }) => {
           },
         },
       });
-      
+
       if (error) {
         return { success: false, error: error.message };
       }
-      
+
       // Check if email confirmation is required
       if (data.user && !data.session) {
-        return { 
-          success: true, 
+        return {
+          success: true,
           error: null,
           message: 'Please check your email to confirm your account.'
         };
       }
-      
+
       return { success: true, error: null };
     } catch (err) {
       return { success: false, error: 'An unexpected error occurred' };

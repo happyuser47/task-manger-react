@@ -78,9 +78,9 @@ const SessionHistory = () => {
     deleteSession,
     deleteSessionsInRange,
   } = useWorkSessionContext();
-  const { formatClockTime, getLocalTime } = useSettingsContext();
+  const { formatClockTime, getLocalTime, getStartOfDayUTC } = useSettingsContext();
 
-  const [activeFilter, setActiveFilter] = useState('week');
+  const [activeFilter, setActiveFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showClearMenu, setShowClearMenu] = useState(false);
@@ -95,17 +95,12 @@ const SessionHistory = () => {
     return () => window.removeEventListener('click', handleClickOutside);
   }, [showClearMenu]);
 
-  // Fetch sessions on mount and filter change
-  useEffect(() => {
-    fetchSessionHistory(activeFilter);
-  }, [activeFilter, fetchSessionHistory]);
-
   const handleFilterChange = (filter) => {
     setActiveFilter(filter);
   };
 
   const handleRefresh = () => {
-    fetchSessionHistory(activeFilter);
+    fetchSessionHistory();
   };
 
   const handleDeleteClick = (sessionId) => {
@@ -157,9 +152,45 @@ const SessionHistory = () => {
     setBulkDeleteConfirm(null);
   };
 
-  // Group sessions by date
+  // Filter visible sessions mathematically without ruining the global context array
+  const filteredLocalSessions = useMemo(() => {
+    if (activeFilter === 'all') return allSessions;
+
+    let startTimestamp = null;
+    if (activeFilter === 'today') {
+      startTimestamp = getStartOfDayUTC().getTime();
+    } else if (activeFilter === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      startTimestamp = getStartOfDayUTC(weekAgo).getTime();
+    } else if (activeFilter === 'month') {
+      const monthAgo = new Date();
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      startTimestamp = getStartOfDayUTC(monthAgo).getTime();
+    }
+
+    if (!startTimestamp) return allSessions;
+
+    return allSessions.filter(s => {
+      const sessionIn = new Date(s.check_in).getTime();
+      return sessionIn >= startTimestamp;
+    });
+  }, [allSessions, activeFilter, getStartOfDayUTC]);
+
+  // Compute stats on the fly for the selected tab instead of backend global stats
+  const localStats = useMemo(() => {
+    const completed = filteredLocalSessions.filter(s => s.check_out && s.duration);
+    const totalTime = completed.reduce((acc, s) => acc + s.duration, 0);
+    return {
+      totalSessions: completed.length,
+      totalTime: totalTime,
+      avgSessionTime: completed.length > 0 ? Math.floor(totalTime / completed.length) : 0
+    };
+  }, [filteredLocalSessions]);
+
+  // Group filtered sessions down locally by date
   const groupedSessions = useMemo(() => {
-    return allSessions.reduce((groups, session) => {
+    return filteredLocalSessions.reduce((groups, session) => {
       const date = getLocalTime(new Date(session.check_in)).toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
@@ -182,7 +213,7 @@ const SessionHistory = () => {
 
       return groups;
     }, {});
-  }, [allSessions]);
+  }, [filteredLocalSessions, getLocalTime]);
 
   const filterLabels = {
     today: 'Today',
@@ -210,7 +241,7 @@ const SessionHistory = () => {
                 e.stopPropagation();
                 setShowClearMenu(!showClearMenu);
               }}
-              disabled={allSessions.length === 0}
+              disabled={filteredLocalSessions.length === 0}
             >
               <TrashIcon />
               Clear History
@@ -280,7 +311,7 @@ const SessionHistory = () => {
             <CheckCircleIcon />
           </div>
           <div className="stat-content">
-            <span className="stat-value">{sessionStats.totalSessions}</span>
+            <span className="stat-value">{localStats.totalSessions}</span>
             <span className="stat-label">Total Sessions</span>
           </div>
         </div>
@@ -289,7 +320,7 @@ const SessionHistory = () => {
             <ClockIcon />
           </div>
           <div className="stat-content">
-            <span className="stat-value">{formatDuration(sessionStats.totalTime)}</span>
+            <span className="stat-value">{formatDuration(localStats.totalTime)}</span>
             <span className="stat-label">Total Time</span>
           </div>
         </div>
@@ -298,7 +329,7 @@ const SessionHistory = () => {
             <TargetIcon />
           </div>
           <div className="stat-content">
-            <span className="stat-value">{formatDuration(sessionStats.avgSessionTime)}</span>
+            <span className="stat-value">{formatDuration(localStats.avgSessionTime)}</span>
             <span className="stat-label">Avg. Session</span>
           </div>
         </div>
@@ -323,7 +354,7 @@ const SessionHistory = () => {
       <div className="history-content">
         {historyLoading ? (
           <Loader inline message="Loading sessions..." />
-        ) : allSessions.length === 0 ? (
+        ) : filteredLocalSessions.length === 0 ? (
           <div className="history-empty-state">
             <div className="empty-icon">
               <CalendarIcon />

@@ -21,32 +21,18 @@ export const WorkSessionProvider = ({ children }) => {
     });
 
     // Fetch all session history
-    const fetchSessionHistory = useCallback(async (filter = 'all', limit = 100) => {
+    const fetchSessionHistory = useCallback(async (limit = 1000) => {
         if (!user) return { data: [], error: null };
 
         setHistoryLoading(true);
 
-        let query = supabase
+        const query = supabase
             .from('work_sessions')
             .select('*', { count: 'exact' })
             .eq('user_id', user.id)
             .not('check_out', 'is', null)
-            .order('check_in', { ascending: false });
-
-        // Apply date filters
-        if (filter === 'today') {
-            query = query.gte('check_in', getStartOfDayUTC().toISOString());
-        } else if (filter === 'week') {
-            const weekAgo = new Date();
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            query = query.gte('check_in', getStartOfDayUTC(weekAgo).toISOString());
-        } else if (filter === 'month') {
-            const monthAgo = new Date();
-            monthAgo.setMonth(monthAgo.getMonth() - 1);
-            query = query.gte('check_in', getStartOfDayUTC(monthAgo).toISOString());
-        }
-
-        query = query.limit(limit);
+            .order('check_in', { ascending: false })
+            .limit(limit);
 
         const { data, error, count } = await query;
 
@@ -119,8 +105,8 @@ export const WorkSessionProvider = ({ children }) => {
             setTodaySessions(todayData);
         }
 
-        // Also prime allSessions for export functionality
-        await fetchSessionHistory('all');
+        // Also prime allSessions for export functionality and charts
+        await fetchSessionHistory();
 
         setLoading(false);
     }, [user, fetchSessionHistory, getStartOfDayUTC]);
@@ -160,6 +146,7 @@ export const WorkSessionProvider = ({ children }) => {
             setCurrentSession(data);
             setSessionDuration(0);
             setTodaySessions(prev => [data, ...prev]);
+            setAllSessions(prev => [data, ...prev]);
         }
         return { success: !error, data, error };
     }, [user, currentSession]);
@@ -188,9 +175,10 @@ export const WorkSessionProvider = ({ children }) => {
 
             // Update local state IMMEDIATELY
             setTodaySessions(prev => prev.map(s => s.id === data.id ? data : s));
+            setAllSessions(prev => prev.map(s => s.id === data.id ? data : s));
 
-            // Refresh history to sink with everything
-            await fetchSessionHistory('all');
+            // Refresh history to sink with everything in background safely
+            fetchSessionHistory();
         }
         return { success: !error, data, error };
     }, [user, currentSession, fetchSessionHistory]);
@@ -206,7 +194,8 @@ export const WorkSessionProvider = ({ children }) => {
 
         if (!error) {
             setTodaySessions(prev => prev.filter(s => s.id !== sessionId));
-            await fetchSessionHistory('all');
+            setAllSessions(prev => prev.filter(s => s.id !== sessionId));
+            fetchSessionHistory();
             return { success: true };
         }
         return { success: false, error };
@@ -235,7 +224,7 @@ export const WorkSessionProvider = ({ children }) => {
 
         const { error } = await query;
         if (!error) {
-            await fetchSessionHistory('all');
+            await fetchSessionHistory();
             // If range covers today, refresh todaySessions too
             if (range === 'all' || range === 'today' || range === 'week' || range === 'month') {
                 const { data } = await supabase

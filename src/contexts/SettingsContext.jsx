@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { supabase } from '../supabaseClient';
 
 const SettingsContext = createContext();
 
@@ -18,19 +19,29 @@ export const SettingsProvider = ({ children }) => {
     const [timezone, setTimezone] = useState('auto');
     const [timeFormat, setTimeFormat] = useState('12h');
 
-    // Load from local storage when user changes
+    // Load from local storage and remote metadata when user changes
     useEffect(() => {
         if (user) {
+            // Priority 1: Supabase DB Remote Cloud Metadata (syncs across laptop/mobile)
+            const metaTz = user.metadata?.timezone;
+            const metaFmt = user.metadata?.timeFormat;
+
+            // Priority 2: LocalStorage Fallback (speeds up first frame)
             const savedSettings = localStorage.getItem(`settings_${user.id}`);
+            let localParsed = {};
             if (savedSettings) {
                 try {
-                    const parsed = JSON.parse(savedSettings);
-                    if (parsed.timezone) setTimezone(parsed.timezone);
-                    if (parsed.timeFormat) setTimeFormat(parsed.timeFormat);
+                    localParsed = JSON.parse(savedSettings);
                 } catch (e) {
-                    console.error("Failed to parse settings", e);
+                    console.error("Failed to parse local settings", e);
                 }
             }
+
+            if (metaTz) setTimezone(metaTz);
+            else if (localParsed.timezone) setTimezone(localParsed.timezone);
+
+            if (metaFmt) setTimeFormat(metaFmt);
+            else if (localParsed.timeFormat) setTimeFormat(localParsed.timeFormat);
         }
     }, [user]);
 
@@ -44,11 +55,22 @@ export const SettingsProvider = ({ children }) => {
         saveSettings({ timeFormat: newFmt });
     };
 
-    const saveSettings = (updates) => {
+    const saveSettings = async (updates) => {
         if (user) {
+            // Save rapidly to LocalStorage to ensure UI stays perfectly snappy while saving
             const current = localStorage.getItem(`settings_${user.id}`);
             const parsed = current ? JSON.parse(current) : {};
-            localStorage.setItem(`settings_${user.id}`, JSON.stringify({ ...parsed, ...updates }));
+            const merged = { ...parsed, ...updates };
+            localStorage.setItem(`settings_${user.id}`, JSON.stringify(merged));
+
+            // Sync remotely to Supabase to mirror state across laptop and mobile flawlessly
+            try {
+                await supabase.auth.updateUser({
+                    data: updates
+                });
+            } catch (err) {
+                console.error("Failed to sync settings to cloud:", err);
+            }
         }
     };
 
