@@ -183,10 +183,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  /* Reduced blur for better mobile performance and less glitches */
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -300,7 +297,7 @@
 
 .history-stat-card {
   display: flex;
-  flex-direction: row; /* Horizontal for better space utilization */
+  flex-direction: row;
   align-items: center;
   justify-content: flex-start;
   gap: 16px;
@@ -308,46 +305,24 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 
-.history-stat-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
 .history-stat-card:hover {
-  transform: translateY(-2px);
   border-color: var(--border-default);
   box-shadow: var(--shadow-lg);
-}
-
-.history-stat-card:hover::after {
-  opacity: 1;
 }
 
 .stat-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 14px;
   flex-shrink: 0;
-  transition: transform 0.3s ease;
-}
-
-.history-stat-card:hover .stat-icon {
-  transform: scale(1.05) rotate(3deg);
 }
 
 .stat-icon.sessions {
@@ -795,13 +770,28 @@
   }
 
   .history-stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 
   .history-stat-card {
     padding: 16px 20px;
-    justify-content: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .stat-content {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .stat-label {
+    font-size: 0.6875rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
   }
 
   .filter-tabs {
@@ -864,28 +854,9 @@
     font-size: 1.25rem;
   }
 
-  .history-stats-grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 columns is much safer for text space */
-    gap: 12px;
-  }
-
-  .history-stat-card {
-    padding: 16px;
-    flex-direction: column; /* Stack vertically for more width on text */
-    align-items: center;
-    text-align: center;
-    gap: 8px;
-    min-height: 120px;
-  }
-
-  .stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-  }
-
   .stat-value {
     font-size: 1.125rem;
+    word-break: break-all;
   }
 
   .stat-label {
@@ -894,14 +865,15 @@
   }
 
   .session-main {
-    padding: 16px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 16px;
+    padding: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
   }
 
   .session-times {
-    grid-column: 1 / -1;
+    width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -919,18 +891,19 @@
   .time-arrow {
     width: 20px;
     height: 20px;
+    flex-shrink: 0;
   }
 
   .session-duration {
-    grid-column: 1;
-    width: fit-content;
-    padding: 4px 10px;
+    flex: 1;
+    text-align: center;
+    padding: 6px 10px;
     font-size: 0.75rem;
   }
 
   .btn-delete-session {
-    grid-column: 2;
-    align-self: center;
+    opacity: 1;
+    flex-shrink: 0;
   }
 
   /* Optimized date-header for all mobile devices */
@@ -946,20 +919,36 @@
   }
 
   .date-text {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     line-height: 1.3;
   }
 
   .date-count {
     padding: 2px 8px;
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     white-space: nowrap;
   }
 
   .date-total {
     padding: 6px 12px;
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     width: fit-content;
+  }
+
+  .filter-tabs {
+    gap: 4px;
+    padding: 3px;
+  }
+
+  .filter-tab {
+    padding: 7px 14px;
+    font-size: 0.75rem;
+  }
+
+  .modal-content {
+    padding: 24px 20px;
+    margin: 16px;
+    max-width: calc(100vw - 32px);
   }
 }
 

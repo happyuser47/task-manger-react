@@ -201,7 +201,7 @@ const Analytics = ({ sessions }) => {
 
       {/* Summary Cards */}
       <div className="analytics-summary">
-        <div className="summary-card" style={{ flex: 1, minWidth: '200px' }}>
+        <div className="summary-card">
           <div className="summary-icon time">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
               <circle cx="12" cy="12" r="10" />
@@ -209,14 +209,14 @@ const Analytics = ({ sessions }) => {
             </svg>
           </div>
           <div className="summary-content">
-            <span className="summary-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+            <span className="summary-value">
               {formatTime(analyticsData.summary.totalWorkTime)}
             </span>
-            <span className="summary-label" style={{ color: 'var(--text-muted)' }}>Total Focus Time</span>
+            <span className="summary-label">Total Focus Time</span>
           </div>
         </div>
 
-        <div className="summary-card" style={{ flex: 1, minWidth: '200px' }}>
+        <div className="summary-card">
           <div className="summary-icon attempts">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -226,14 +226,14 @@ const Analytics = ({ sessions }) => {
             </svg>
           </div>
           <div className="summary-content">
-            <span className="summary-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+            <span className="summary-value">
               {analyticsData.summary.totalSessions}
             </span>
-            <span className="summary-label" style={{ color: 'var(--text-muted)' }}>Total Check-Ins</span>
+            <span className="summary-label">Total Check-Ins</span>
           </div>
         </div>
 
-        <div className="summary-card" style={{ flex: 1, minWidth: '200px' }}>
+        <div className="summary-card">
           <div className="summary-icon completion">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -241,10 +241,10 @@ const Analytics = ({ sessions }) => {
             </svg>
           </div>
           <div className="summary-content">
-            <span className="summary-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+            <span className="summary-value">
               {formatTime(analyticsData.summary.avgSessionLength)}
             </span>
-            <span className="summary-label" style={{ color: 'var(--text-muted)' }}>Average Session Length</span>
+            <span className="summary-label">Avg Session Length</span>
           </div>
         </div>
       </div>
@@ -259,9 +259,9 @@ const Analytics = ({ sessions }) => {
               {activeTab === 'daily' ? 'Past 14 Days' : activeTab === 'weekly' ? 'Past 12 Weeks' : 'Past 12 Months'}
             </span>
           </div>
-          <div className="chart-container" style={{ minHeight: '320px', width: '100%' }}>
-            <ResponsiveContainer width="100%" height={320}>
-              <AreaChart data={currentData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={currentData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorWorkTimeArea" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.5} />
@@ -272,31 +272,33 @@ const Analytics = ({ sessions }) => {
                 <XAxis
                   dataKey="name"
                   stroke="var(--text-muted)"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={12}
-                  minTickGap={20}
+                  tickMargin={8}
+                  minTickGap={15}
+                  interval="preserveStartEnd"
                 />
                 <YAxis
                   stroke="var(--text-muted)"
-                  fontSize={11}
+                  fontSize={10}
                   tickFormatter={formatYAxis}
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={12}
-                  width={50}
+                  tickMargin={8}
+                  width={40}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border-light)', strokeWidth: 1, strokeDasharray: '4 4' }} />
                 <Area
                   type="monotone"
                   dataKey="workTime"
                   stroke={COLORS.primary}
-                  strokeWidth={3}
+                  strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#colorWorkTimeArea)"
                   name="Session Time"
-                  activeDot={{ r: 6, strokeWidth: 0, fill: COLORS.primary }}
+                  dot={false}
+                  activeDot={{ r: 5, strokeWidth: 0, fill: COLORS.primary }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -311,9 +313,9 @@ const Analytics = ({ sessions }) => {
               Consistency Check
             </span>
           </div>
-          <div className="chart-container" style={{ minHeight: '300px', width: '100%' }}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={currentData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={currentData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={COLORS.secondary} stopOpacity={0.9} />
@@ -324,28 +326,29 @@ const Analytics = ({ sessions }) => {
                 <XAxis
                   dataKey="name"
                   stroke="var(--text-muted)"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={12}
-                  minTickGap={20}
+                  tickMargin={8}
+                  minTickGap={15}
+                  interval="preserveStartEnd"
                 />
                 <YAxis
                   stroke="var(--text-muted)"
-                  fontSize={11}
+                  fontSize={10}
                   tickFormatter={formatYAxis}
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={12}
-                  width={50}
+                  tickMargin={8}
+                  width={40}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--bg-tertiary)', opacity: 0.4 }} />
                 <Bar
                   dataKey="workTime"
                   fill="url(#colorBar)"
-                  radius={[6, 6, 0, 0]}
+                  radius={[4, 4, 0, 0]}
                   name="Session Time"
-                  maxBarSize={45}
+                  maxBarSize={35}
                 />
               </BarChart>
             </ResponsiveContainer>

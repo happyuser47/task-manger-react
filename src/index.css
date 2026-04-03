@@ -157,6 +157,24 @@ body {
   min-height: 100vh;
 }
 
+/* === MOBILE PERFORMANCE GLOBAL RULES === */
+@media (max-width: 768px) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  /* Kill ALL backdrop-filter on mobile to prevent GPU smearing/pixel artifacts */
+  * {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Prevent mobile tap highlight causing visual glitches */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
