@@ -8,7 +8,8 @@ const TaskList = ({
   onComplete, 
   onRestart, 
   onDelete,
-  onUpdate 
+  onUpdate,
+  onOpenPomodoro 
 }) => {
   const [filter, setFilter] = useState('all');
 
@@ -83,6 +84,7 @@ const TaskList = ({
               onRestart={onRestart}
               onDelete={onDelete}
               onUpdate={onUpdate}
+              onOpenPomodoro={onOpenPomodoro}
             />
           ))}
         </div>

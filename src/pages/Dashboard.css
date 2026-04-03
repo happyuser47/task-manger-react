@@ -68,3 +68,152 @@
     align-self: flex-end;
   }
 }
+
+/* Modern Pomodoro FAB (Floating Action Button) */
+.pomodoro-fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4), 
+              0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+.pomodoro-fab:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5), 
+              0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pomodoro-fab:active {
+  transform: scale(0.96);
+}
+
+.fab-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: rotate-slow 10s linear infinite;
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fab-text {
+  font-family: 'Inter', sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.fab-pulse-dot {
+  width: 10px;
+  height: 10px;
+  background: #10b981;
+  border-radius: 50%;
+  border: 2px solid white;
+  position: absolute;
+  top: 10px;
+  right: 18px;
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.pomodoro-fab.fab-active {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5),
+              0 0 0 3px rgba(139, 92, 246, 0.2);
+  animation: fab-glow 2s ease-in-out infinite;
+}
+
+@keyframes fab-glow {
+  0%, 100% { box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5), 0 0 0 3px rgba(139, 92, 246, 0.15); }
+  50% { box-shadow: 0 8px 24px rgba(139, 92, 246, 0.7), 0 0 0 6px rgba(139, 92, 246, 0.1); }
+}
+
+@media (max-width: 768px) {
+  .pomodoro-fab {
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 18px;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+  
+  .fab-text {
+    display: none; /* Icon-only on mobile to stay compact */
+  }
+  
+  .pomodoro-fab {
+    padding: 16px;
+    border-radius: 50%;
+  }
+  
+  .fab-pulse-dot {
+    top: 4px;
+    right: 4px;
+  }
+}
+
+/* Focus Mode Restrictions */
+.main-nav.focus-mode-active {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.main-nav.focus-mode-active .main-nav-tab {
+  cursor: not-allowed;
+}
+
+.main-nav.focus-mode-active::after {
+  content: 'Focus session active - navigation disabled';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.views-stack {
+  position: relative;
+  width: 100%;
+}
+
+.view-content.hidden {
+  display: none !important;
+}
+
+.view-content.active {
+  display: block !important;
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

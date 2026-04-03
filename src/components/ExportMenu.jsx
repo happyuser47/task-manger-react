@@ -53,12 +53,20 @@ const CloseIcon = () => (
   </svg>
 );
 
-const ExportMenu = ({ tasks, sessions = [] }) => {
+const ExportMenu = ({ tasks, sessions = [], disabled }) => {
   const { formatClockTime, getLocalTime } = useSettingsContext();
   const [isOpen, setIsOpen] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempFormat, setTempFormat] = useState(null);
   const [exporting, setExporting] = useState(null);
+
+  // Close everything if disabled
+  useEffect(() => {
+    if (disabled) {
+      setIsOpen(false);
+      setShowDatePicker(false);
+    }
+  }, [disabled]);
 
   // Date range states
   const [startDate, setStartDate] = useState(() => {
@@ -354,9 +362,10 @@ const ExportMenu = ({ tasks, sessions = [] }) => {
   return (
     <div className="export-menu" ref={menuRef}>
       <button
-        className="export-trigger"
-        onClick={() => setIsOpen(!isOpen)}
-        title="Export Data"
+        className={`export-trigger ${disabled ? 'disabled' : ''}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        title={disabled ? "Cannot export during focus" : "Export Data"}
       >
         <DownloadIcon />
         <span>Export</span>

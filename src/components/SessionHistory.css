@@ -303,12 +303,11 @@
 
 .history-stat-card {
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* Horizontal for better space utilization */
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 12px;
-  padding: 24px;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
@@ -375,26 +374,27 @@
 .stat-content {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 2px;
   position: relative;
   z-index: 1;
 }
 
-.stat-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
 .stat-label {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+  margin-bottom: 0px;
+}
+
+.stat-value {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
 }
 
 /* Filter Section */

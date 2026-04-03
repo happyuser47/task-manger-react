@@ -11,13 +11,21 @@ const CloseIcon = () => (
   </svg>
 );
 
-const UserMenu = () => {
+const UserMenu = ({ disabled }) => {
   const { user, logout } = useAuth();
   const { timezone, updateTimezone, timeFormat, updateTimeFormat } = useSettingsContext();
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
+
+  // Close settings if disabled becomes true
+  useEffect(() => {
+    if (disabled) {
+      setIsOpen(false);
+      setShowSettings(false);
+    }
+  }, [disabled]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -65,9 +73,10 @@ const UserMenu = () => {
     <>
       <div className="user-menu-pro" ref={menuRef}>
         <button
-          className="user-trigger-pro"
-          onClick={() => setIsOpen(!isOpen)}
+          className={`user-trigger-pro ${disabled ? 'disabled' : ''}`}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
           aria-expanded={isOpen}
+          disabled={disabled}
         >
           <div className="user-avatar-pro">
             {getInitials()}

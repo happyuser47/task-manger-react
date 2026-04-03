@@ -3,11 +3,11 @@ import ThemeToggle from './ThemeToggle';
 import whiteLogo from '../assets/White_logo.png';
 import blackLogo from '../assets/Black_logo.png';
 
-const Header = ({ theme, onToggleTheme, children }) => {
+const Header = ({ theme, onToggleTheme, children, disabled }) => {
   return (
-    <header className="header">
+    <header className={`header ${disabled ? 'disabled-section' : ''}`}>
       <div className="header-actions">
-        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} disabled={disabled} />
         {children}
       </div>
 

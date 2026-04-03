@@ -311,8 +311,8 @@ const SessionHistory = () => {
             <CheckCircleIcon />
           </div>
           <div className="stat-content">
-            <span className="stat-value">{localStats.totalSessions}</span>
             <span className="stat-label">Total Sessions</span>
+            <span className="stat-value">{localStats.totalSessions}</span>
           </div>
         </div>
         <div className="history-stat-card">
@@ -320,8 +320,8 @@ const SessionHistory = () => {
             <ClockIcon />
           </div>
           <div className="stat-content">
-            <span className="stat-value">{formatDuration(localStats.totalTime)}</span>
             <span className="stat-label">Total Time</span>
+            <span className="stat-value">{formatDuration(localStats.totalTime)}</span>
           </div>
         </div>
         <div className="history-stat-card">
@@ -329,8 +329,8 @@ const SessionHistory = () => {
             <TargetIcon />
           </div>
           <div className="stat-content">
-            <span className="stat-value">{formatDuration(localStats.avgSessionTime)}</span>
             <span className="stat-label">Avg. Session</span>
+            <span className="stat-value">{formatDuration(localStats.avgSessionTime)}</span>
           </div>
         </div>
       </div>

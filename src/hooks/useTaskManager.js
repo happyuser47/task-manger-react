@@ -58,6 +58,7 @@ export const useTaskManager = () => {
             isExceeding: false,
             startedAt: startedAt,
             description: task.description || '',
+            projectId: task.project_id || null,
             createdAt: new Date(task.created_at).getTime(),
             completed: task.completed,
           };
@@ -86,6 +87,7 @@ export const useTaskManager = () => {
               isExceeding: false,
               startedAt: null,
               description: payload.new.description || '',
+              projectId: payload.new.project_id || null,
               createdAt: new Date(payload.new.created_at).getTime(),
               completed: payload.new.completed,
             };
@@ -103,6 +105,7 @@ export const useTaskManager = () => {
                   bestTime: payload.new.best_time ?? t.bestTime,
                   attempts: payload.new.attempts ?? t.attempts,
                   description: payload.new.description ?? t.description,
+                  projectId: payload.new.project_id ?? t.projectId,
                   status: payload.new.completed ? 'completed' : t.status,
                 };
               }
@@ -141,19 +144,20 @@ export const useTaskManager = () => {
   }, []);
 
   // Add a new task
-  const addTask = useCallback(async (name, description = '') => {
+  const addTask = useCallback(async (name, description = '', projectId = null) => {
     if (!name.trim() || !user) return;
+
+    const insertData = {
+      user_id: user.id,
+      title: name.trim(),
+      description: description.trim(),
+      completed: false,
+    };
+    if (projectId) insertData.project_id = projectId;
 
     const { data, error } = await supabase
       .from('tasks')
-      .insert([
-        {
-          user_id: user.id,
-          title: name.trim(),
-          description: description.trim(),
-          completed: false
-        }
-      ])
+      .insert([insertData])
       .select()
       .single();
 
@@ -172,6 +176,7 @@ export const useTaskManager = () => {
         isExceeding: false,
         startedAt: null,
         description: data.description || '',
+        projectId: data.project_id || null,
         createdAt: new Date(data.created_at).getTime(),
         completed: data.completed,
       };

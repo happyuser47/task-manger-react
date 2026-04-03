@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 
-const AddTaskForm = ({ onAddTask }) => {
+const AddTaskForm = ({ onAddTask, disabled }) => {
   const [taskName, setTaskName] = useState('');
   const [description, setDescription] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (disabled) return;
     if (taskName.trim()) {
       onAddTask(taskName, description);
       setTaskName('');
@@ -14,7 +15,7 @@ const AddTaskForm = ({ onAddTask }) => {
   };
 
   return (
-    <form className="add-task-form" onSubmit={handleSubmit}>
+    <form className={`add-task-form ${disabled ? 'disabled-form' : ''}`} onSubmit={handleSubmit}>
       <div className="form-header">
         <div className="form-header-icon">✦</div>
         <div>
@@ -47,7 +48,7 @@ const AddTaskForm = ({ onAddTask }) => {
           </div>
         </div>
         <div className="form-footer">
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={disabled}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />

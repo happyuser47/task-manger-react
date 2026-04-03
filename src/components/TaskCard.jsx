@@ -61,7 +61,9 @@ const TaskCard = ({
   onComplete,
   onRestart,
   onDelete,
-  onUpdate
+  onUpdate,
+  onOpenPomodoro,
+  isFocusActive
 }) => {
   const [showAttempts, setShowAttempts] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -91,6 +93,7 @@ const TaskCard = ({
   };
 
   const handleDelete = () => {
+    if (isFocusActive) return;
     if (confirmDelete) {
       onDelete(task.id);
       setConfirmDelete(false);
@@ -101,6 +104,7 @@ const TaskCard = ({
   };
 
   const handleEdit = () => {
+    if (isFocusActive) return;
     setEditName(task.name);
     setEditDescription(task.description || '');
     setIsEditing(true);
@@ -179,9 +183,10 @@ const TaskCard = ({
               <div className="task-title-row">
                 <h3 className="task-name" onDoubleClick={handleEdit}>{task.name}</h3>
                 <button
-                  className="task-edit-btn"
+                  className={`task-edit-btn ${isFocusActive ? 'disabled' : ''}`}
                   onClick={handleEdit}
-                  title="Edit task"
+                  disabled={isFocusActive}
+                  title={isFocusActive ? "Cannot edit during focus" : "Edit task"}
                 >
                   <EditIcon />
                 </button>
@@ -213,9 +218,10 @@ const TaskCard = ({
             </div>
           ) : (
             <button
-              className="task-delete"
+              className={`task-delete ${isFocusActive ? 'disabled' : ''}`}
               onClick={handleDelete}
-              title="Delete task"
+              disabled={isFocusActive}
+              title={isFocusActive ? "Cannot delete during focus" : "Delete task"}
             >
               <TrashIcon />
             </button>
@@ -249,12 +255,25 @@ const TaskCard = ({
 
         <div className="task-actions">
           {task.status === 'idle' && (
-            <button
-              className="btn btn-success btn-sm"
-              onClick={() => onStart(task.id)}
-            >
-              <PlayIcon /> Start
-            </button>
+            <>
+              <button
+                className="btn btn-success btn-sm"
+                onClick={() => onStart(task.id)}
+                disabled={isFocusActive}
+              >
+                <PlayIcon /> Start
+              </button>
+              {onOpenPomodoro && (
+                <button
+                  className="btn btn-pomodoro btn-sm"
+                  onClick={() => onOpenPomodoro(task)}
+                  disabled={isFocusActive}
+                  title={isFocusActive ? "Focus session active" : "Start Pomodoro"}
+                >
+                  <span className="pomodoro-icon">🍅</span> Pomodoro
+                </button>
+              )}
+            </>
           )}
 
           {task.status === 'running' && (
@@ -278,6 +297,7 @@ const TaskCard = ({
             <button
               className="btn btn-primary btn-sm"
               onClick={() => onRestart(task.id)}
+              disabled={isFocusActive}
             >
               <RefreshIcon /> Restart
             </button>

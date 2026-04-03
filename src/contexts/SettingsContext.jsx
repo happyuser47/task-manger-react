@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '../supabaseClient';
 
@@ -6,6 +6,8 @@ const SettingsContext = createContext();
 
 export const SettingsProvider = ({ children }) => {
     const { user } = useAuth();
+    const [settingsLoaded, setSettingsLoaded] = useState(false);
+    const debounceRef = useRef(null);
 
     // Safe timezone fallback
     const getDefaultTimezone = () => {
@@ -16,68 +18,151 @@ export const SettingsProvider = ({ children }) => {
         }
     };
 
+    // --- All Settings State ---
     const [timezone, setTimezone] = useState('auto');
     const [timeFormat, setTimeFormat] = useState('12h');
+    const [theme, setTheme] = useState('dark');
 
-    // Load from local storage and remote metadata when user changes
+    // Pomodoro settings
+    const [pomodoroFocusDuration, setPomodoroFocusDuration] = useState(25);
+    const [pomodoroShortBreak, setPomodoroShortBreak] = useState(5);
+    const [pomodoroLongBreak, setPomodoroLongBreak] = useState(15);
+    const [pomodoroTickEnabled, setPomodoroTickEnabled] = useState(true);
+    const [pomodoroSessionsCompleted, setPomodoroSessionsCompleted] = useState(0);
+
+    // --- Load settings from Supabase on login ---
     useEffect(() => {
-        if (user) {
-            // Priority 1: Supabase DB Remote Cloud Metadata (syncs across laptop/mobile)
-            const metaTz = user.metadata?.timezone;
-            const metaFmt = user.metadata?.timeFormat;
-
-            // Priority 2: LocalStorage Fallback (speeds up first frame)
-            const savedSettings = localStorage.getItem(`settings_${user.id}`);
-            let localParsed = {};
-            if (savedSettings) {
-                try {
-                    localParsed = JSON.parse(savedSettings);
-                } catch (e) {
-                    console.error("Failed to parse local settings", e);
-                }
-            }
-
-            if (metaTz) setTimezone(metaTz);
-            else if (localParsed.timezone) setTimezone(localParsed.timezone);
-
-            if (metaFmt) setTimeFormat(metaFmt);
-            else if (localParsed.timeFormat) setTimeFormat(localParsed.timeFormat);
+        if (!user) {
+            setSettingsLoaded(false);
+            return;
         }
+
+        const loadSettings = async () => {
+            try {
+                // Try to fetch existing settings
+                const { data, error } = await supabase
+                    .from('user_settings')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (error && error.code === 'PGRST116') {
+                    // No row found — create default settings for this user
+                    const { data: newData } = await supabase
+                        .from('user_settings')
+                        .insert({ user_id: user.id })
+                        .select()
+                        .single();
+
+                    if (newData) applySettings(newData);
+                } else if (data) {
+                    applySettings(data);
+                }
+            } catch (err) {
+                console.error('Failed to load settings:', err);
+                // Fall back to localStorage
+                loadLocalSettings();
+            }
+            setSettingsLoaded(true);
+        };
+
+        loadSettings();
     }, [user]);
 
+    const applySettings = (data) => {
+        if (data.timezone) setTimezone(data.timezone);
+        if (data.time_format) setTimeFormat(data.time_format);
+        if (data.theme) setTheme(data.theme);
+        if (data.pomodoro_focus_duration != null) setPomodoroFocusDuration(data.pomodoro_focus_duration);
+        if (data.pomodoro_short_break != null) setPomodoroShortBreak(data.pomodoro_short_break);
+        if (data.pomodoro_long_break != null) setPomodoroLongBreak(data.pomodoro_long_break);
+        if (data.pomodoro_tick_enabled != null) setPomodoroTickEnabled(data.pomodoro_tick_enabled);
+        if (data.pomodoro_sessions_completed != null) setPomodoroSessionsCompleted(data.pomodoro_sessions_completed);
+
+        // Also mirror to localStorage for fast loading next time
+        if (user) {
+            localStorage.setItem(`settings_${user.id}`, JSON.stringify(data));
+        }
+    };
+
+    const loadLocalSettings = () => {
+        if (!user) return;
+        const saved = localStorage.getItem(`settings_${user.id}`);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                applySettings(parsed);
+            } catch (e) {
+                console.error('Failed to parse local settings', e);
+            }
+        }
+    };
+
+    // --- Save to Supabase (debounced to avoid rapid writes) ---
+    const saveToSupabase = useCallback(async (updates) => {
+        if (!user) return;
+
+        // Immediately save to localStorage for fast UI
+        const current = localStorage.getItem(`settings_${user.id}`);
+        const parsed = current ? JSON.parse(current) : {};
+        const merged = { ...parsed, ...updates };
+        localStorage.setItem(`settings_${user.id}`, JSON.stringify(merged));
+
+        // Debounce Supabase writes (500ms)
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(async () => {
+            try {
+                await supabase
+                    .from('user_settings')
+                    .update(updates)
+                    .eq('user_id', user.id);
+            } catch (err) {
+                console.error('Failed to sync settings to Supabase:', err);
+            }
+        }, 500);
+    }, [user]);
+
+    // --- Individual update functions ---
     const updateTimezone = (newTz) => {
         setTimezone(newTz);
-        saveSettings({ timezone: newTz });
+        saveToSupabase({ timezone: newTz });
     };
 
     const updateTimeFormat = (newFmt) => {
         setTimeFormat(newFmt);
-        saveSettings({ timeFormat: newFmt });
+        saveToSupabase({ time_format: newFmt });
     };
 
-    const saveSettings = async (updates) => {
-        if (user) {
-            // Save rapidly to LocalStorage to ensure UI stays perfectly snappy while saving
-            const current = localStorage.getItem(`settings_${user.id}`);
-            const parsed = current ? JSON.parse(current) : {};
-            const merged = { ...parsed, ...updates };
-            localStorage.setItem(`settings_${user.id}`, JSON.stringify(merged));
+    const updateTheme = (newTheme) => {
+        setTheme(newTheme);
+        saveToSupabase({ theme: newTheme });
+    };
 
-            // Sync remotely to Supabase to mirror state across laptop and mobile flawlessly
-            try {
-                await supabase.auth.updateUser({
-                    data: updates
-                });
-            } catch (err) {
-                console.error("Failed to sync settings to cloud:", err);
+    const updatePomodoroSettings = (updates) => {
+        const mapping = {
+            focus: { state: setPomodoroFocusDuration, db: 'pomodoro_focus_duration' },
+            shortBreak: { state: setPomodoroShortBreak, db: 'pomodoro_short_break' },
+            longBreak: { state: setPomodoroLongBreak, db: 'pomodoro_long_break' },
+            tickEnabled: { state: setPomodoroTickEnabled, db: 'pomodoro_tick_enabled' },
+            sessionsCompleted: { state: setPomodoroSessionsCompleted, db: 'pomodoro_sessions_completed' },
+        };
+
+        const dbUpdates = {};
+        for (const [key, value] of Object.entries(updates)) {
+            if (mapping[key]) {
+                mapping[key].state(value);
+                dbUpdates[mapping[key].db] = value;
             }
+        }
+
+        if (Object.keys(dbUpdates).length > 0) {
+            saveToSupabase(dbUpdates);
         }
     };
 
-    // Calculate actual active timezone representing the context
+    // --- Timezone utilities ---
     const activeTimezone = timezone === 'auto' ? getDefaultTimezone() : timezone;
 
-    // Utility to convert any date into a fake "local" Date object matching the selected timezone.
     const getLocalTime = (dateObj = new Date()) => {
         try {
             return new Date(dateObj.toLocaleString('en-US', { timeZone: activeTimezone }));
@@ -86,13 +171,11 @@ export const SettingsProvider = ({ children }) => {
         }
     };
 
-    // Get the UTC Date representing Midnight of the current day in the target Timezone
     const getStartOfDayUTC = (dateObj = new Date()) => {
         try {
             const tzDateStr = dateObj.toLocaleString('en-US', { timeZone: activeTimezone });
             const tzDate = new Date(tzDateStr);
             const offset = tzDate.getTime() - dateObj.getTime();
-
             tzDate.setHours(0, 0, 0, 0);
             return new Date(tzDate.getTime() - offset);
         } catch (e) {
@@ -102,7 +185,6 @@ export const SettingsProvider = ({ children }) => {
         }
     };
 
-    // Global utility to format specific ISO time points precisely cleanly
     const formatClockTime = (dateString) => {
         if (!dateString) return '--:--';
         try {
@@ -113,21 +195,33 @@ export const SettingsProvider = ({ children }) => {
                 hour12: timeFormat === '12h'
             });
         } catch (e) {
-            // fallback gracefully
             return new Date(dateString).toLocaleTimeString();
         }
     };
 
-
     return (
         <SettingsContext.Provider value={{
+            // State
+            settingsLoaded,
             timezone,
             timeFormat,
+            theme,
+            pomodoroFocusDuration,
+            pomodoroShortBreak,
+            pomodoroLongBreak,
+            pomodoroTickEnabled,
+            pomodoroSessionsCompleted,
+            
+            // Updaters
             updateTimezone,
             updateTimeFormat,
+            updateTheme,
+            updatePomodoroSettings,
+
+            // Utilities
             getLocalTime,
             getStartOfDayUTC,
-            formatClockTime
+            formatClockTime,
         }}>
             {children}
         </SettingsContext.Provider>
