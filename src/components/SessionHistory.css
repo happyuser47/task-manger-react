@@ -183,23 +183,20 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
+  /* Reduced blur for better mobile performance and less glitches */
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeInModal 0.2s ease-out;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+@keyframes fadeInModal {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .modal-content {
@@ -685,11 +682,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.85); /* Darker background instead of blur */
   border-radius: var(--radius-xl);
   z-index: 10;
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeInModal 0.2s ease-out;
 }
 
 @keyframes fadeIn {
@@ -869,23 +865,23 @@
   }
 
   .history-stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(2, 1fr); /* 2 columns is much safer for text space */
+    gap: 12px;
   }
 
   .history-stat-card {
-    padding: 14px;
-    gap: 12px;
-    justify-content: flex-start;
-    min-height: auto;
+    padding: 16px;
+    flex-direction: column; /* Stack vertically for more width on text */
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    min-height: 120px;
   }
 
   .stat-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    margin: 0 !important;
-    /* Force reset global margins */
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
   }
 
   .stat-value {
@@ -971,27 +967,12 @@
 @media (max-width: 360px) {
   .history-stats-grid {
     grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .history-stat-card {
-    padding: 12px;
-    gap: 12px;
-  }
-
-  .stat-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-  }
-
-  .stat-icon svg {
-    width: 18px;
-    height: 18px;
+    gap: 10px;
   }
 
   .stat-value {
-    font-size: 1.05rem;
+    font-size: 1.125rem;
+    word-break: break-all;
   }
 
   .history-page-title {

@@ -35,6 +35,7 @@ const Dashboard = () => {
     addTask,
     updateTask,
     deleteTask,
+    deleteTasksByProject,
     startTask,
     stopTask,
     completeTask,
@@ -76,6 +77,14 @@ const Dashboard = () => {
   const handleClosePomodoro = () => {
     setPomodoroOpen(false);
     setPomodoroTask(null);
+  };
+
+  const handleDeleteProject = async (id) => {
+    const success = await deleteProject(id);
+    if (success) {
+      // Also remove tasks belonging to this project from local state
+      deleteTasksByProject(id);
+    }
   };
 
   if (loading) {
@@ -183,7 +192,7 @@ const Dashboard = () => {
               projects={projects}
               tasks={tasks}
               onAddProject={addProject}
-              onDeleteProject={deleteProject}
+              onDeleteProject={handleDeleteProject}
               onAddTask={addTask}
               onStartTask={startTask}
               onStopTask={stopTask}

@@ -226,6 +226,11 @@ export const useTaskManager = () => {
     }
   }, [user, tasks, addNotification]);
 
+  // Delete all tasks for a specific project (local cleanup)
+  const deleteTasksByProject = useCallback((projectId) => {
+    setTasks(prev => prev.filter(t => t.projectId === projectId ? false : true));
+  }, []);
+
   // Update a task's name and description
   const updateTask = useCallback(async (id, newName, newDescription) => {
     if (!user) return;
@@ -527,6 +532,7 @@ export const useTaskManager = () => {
     addTask,
     updateTask,
     deleteTask,
+    deleteTasksByProject,
     startTask,
     stopTask,
     completeTask,

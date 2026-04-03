@@ -12,6 +12,15 @@
   transition: all var(--transition-slow);
 }
 
+/* Fix mobile rendering smear bug caused by fixed background attachment */
+@media (max-width: 768px) {
+  .app {
+    background-attachment: scroll;
+    padding: 16px;
+  }
+}
+
+
 .app-container {
   max-width: 960px;
   margin: 0 auto;
