@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSettingsContext } from '../contexts/SettingsContext';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../supabaseClient';
 import './PomodoroTimer.css';
 
 const MODES = {
@@ -43,6 +45,83 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
   const intervalRef = useRef(null);
   const audioContextRef = useRef(null);
   const tickEnabledRef = useRef(tickEnabled);
+
+  // Sync refs
+  const { user } = useAuth();
+  const channelRef = useRef(null);
+  const syncTimestampRef = useRef(0);
+  const isBroadcastingRef = useRef(false);
+
+  const broadcastState = useCallback((overrides) => {
+    if (!channelRef.current || isBroadcastingRef.current) return;
+    const now = Date.now();
+    syncTimestampRef.current = now;
+    
+    channelRef.current.send({
+      type: 'broadcast',
+      event: 'timer_state',
+      payload: {
+        mode: overrides?.mode !== undefined ? overrides.mode : mode,
+        timeLeft: overrides?.timeLeft !== undefined ? overrides.timeLeft : timeLeft,
+        isRunning: overrides?.isRunning !== undefined ? overrides.isRunning : isRunning,
+        currentTaskId: overrides?.currentTaskId !== undefined ? overrides.currentTaskId : currentTaskId,
+        currentTaskName: overrides?.currentTaskName !== undefined ? overrides.currentTaskName : currentTaskName,
+        timestamp: now
+      }
+    }).catch(err => console.log('Broadcast error:', err));
+  }, [mode, timeLeft, isRunning, currentTaskId, currentTaskName]);
+
+  // Connect to Supabase Broadcast channel
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase.channel(`pomodoro_sync_${user.id}`, {
+      config: { broadcast: { self: false } }
+    });
+    
+    channel
+      .on('broadcast', { event: 'timer_state' }, (payload) => {
+        const data = payload.payload;
+        if (data.timestamp <= syncTimestampRef.current) return;
+        
+        syncTimestampRef.current = data.timestamp;
+        isBroadcastingRef.current = true;
+        
+        setMode(data.mode);
+        setIsRunning(data.isRunning);
+        
+        if (data.currentTaskId !== undefined) {
+           setCurrentTaskId(data.currentTaskId);
+           setCurrentTaskName(data.currentTaskName);
+        }
+
+        let newTimeLeft = data.timeLeft;
+        if (data.isRunning) {
+          const elapsed = Math.floor((Date.now() - data.timestamp) / 1000);
+          newTimeLeft = Math.max(0, newTimeLeft - elapsed);
+        }
+        setTimeLeft(newTimeLeft);
+        
+        setTimeout(() => {
+           isBroadcastingRef.current = false;
+        }, 300);
+      })
+      .on('broadcast', { event: 'request_sync' }, () => {
+         // Send our local state to the newly joined tab
+         broadcastState();
+      })
+      .subscribe((status) => {
+         if (status === 'SUBSCRIBED') {
+           channel.send({ type: 'broadcast', event: 'request_sync' });
+         }
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, broadcastState]);
 
   // Sync from context when settings load from Supabase (e.g. on login)
   useEffect(() => {
@@ -189,7 +268,8 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
     setMode(newMode);
     setTimeLeft(getDuration(newMode));
     setIsRunning(false);
-  }, [getDuration, mode, isRunning, currentTaskId, onStopTask]);
+    broadcastState({ mode: newMode, timeLeft: getDuration(newMode), isRunning: false });
+  }, [getDuration, mode, isRunning, currentTaskId, onStopTask, broadcastState]);
 
   const handleTimerComplete = useCallback(() => {
     // Play notification sound
@@ -259,6 +339,7 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
           onStopTask(currentTaskId);
         }
       }
+      broadcastState({ isRunning: next });
       return next;
     });
   };
@@ -271,6 +352,7 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
     setIsRunning(false);
     setTimeLeft(getDuration(mode));
     setIsFullscreen(false);
+    broadcastState({ isRunning: false, timeLeft: getDuration(mode) });
     onClose();
   };
 
@@ -280,6 +362,7 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
     }
     setIsRunning(false);
     setTimeLeft(getDuration(mode));
+    broadcastState({ isRunning: false, timeLeft: getDuration(mode) });
   };
 
   const handleDurationChange = (key, value) => {
@@ -308,6 +391,10 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
       localStorage.removeItem('pomodoro_taskName');
     }
     setShowTaskPicker(false);
+    broadcastState({ 
+      currentTaskId: selectedTask ? selectedTask.id : null, 
+      currentTaskName: selectedTask ? selectedTask.name : '' 
+    });
   };
 
   const toggleFullscreen = () => {
