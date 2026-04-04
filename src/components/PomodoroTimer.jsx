@@ -41,6 +41,18 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
   const [currentTaskId, setCurrentTaskId] = useState(() => localStorage.getItem('pomodoro_taskId') || null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTaskPicker, setShowTaskPicker] = useState(false);
+
+  // Disable body scroll when modal is open to keep it centered and fixed
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
   
   const intervalRef = useRef(null);
   const audioContextRef = useRef(null);
