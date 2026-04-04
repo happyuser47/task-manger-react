@@ -192,6 +192,7 @@ const Dashboard = () => {
               projects={projects}
               tasks={tasks}
               onAddProject={addProject}
+              onUpdateProject={updateProject}
               onDeleteProject={handleDeleteProject}
               onAddTask={addTask}
               onStartTask={startTask}

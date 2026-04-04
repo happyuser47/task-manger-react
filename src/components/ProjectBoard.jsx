@@ -73,6 +73,12 @@ const MoreIcon = () => (
   </svg>
 );
 
+const EditIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+  </svg>
+);
+
 const ProjectBoard = ({
   projects,
   tasks,
@@ -86,6 +92,7 @@ const ProjectBoard = ({
   onDeleteTask,
   onOpenPomodoro,
   isFocusActive,
+  onUpdateProject,
 }) => {
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
@@ -96,6 +103,10 @@ const ProjectBoard = ({
   const [newTaskDesc, setNewTaskDesc] = useState('');
   const [confirmDeleteProject, setConfirmDeleteProject] = useState(null);
   const [confirmDeleteTask, setConfirmDeleteTask] = useState(null);
+  
+  // Renaming state
+  const [editingProjectId, setEditingProjectId] = useState(null);
+  const [editProjectName, setEditProjectName] = useState('');
 
   const PROJECT_COLORS = [
     '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899',
@@ -145,6 +156,27 @@ const ProjectBoard = ({
   const handleDeleteProject = async (projectId) => {
     await onDeleteProject(projectId);
     setConfirmDeleteProject(null);
+  };
+
+  const handleStartEditProject = (project, e) => {
+    e.stopPropagation();
+    setEditingProjectId(project.id);
+    setEditProjectName(project.name);
+  };
+
+  const handleSaveEditProject = async (e, projectId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!editProjectName.trim()) return;
+    if (onUpdateProject) {
+      await onUpdateProject(projectId, { name: editProjectName.trim() });
+    }
+    setEditingProjectId(null);
+  };
+
+  const handleCancelEditProject = (e) => {
+    e.stopPropagation();
+    setEditingProjectId(null);
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -330,8 +362,26 @@ const ProjectBoard = ({
               <div className="pb-project-header" onClick={() => toggleProject(project.id)}>
                 <div className="pb-project-color" style={{ backgroundColor: project.color || '#8b5cf6' }} />
                 <div className="pb-project-info">
-                  <h3 className="pb-project-name">{project.name}</h3>
-                  {project.description && <p className="pb-project-desc">{project.description}</p>}
+                  {editingProjectId === project.id ? (
+                    <form className="pb-edit-project-form" onSubmit={(e) => handleSaveEditProject(e, project.id)} onClick={e => e.stopPropagation()}>
+                      <input
+                        type="text"
+                        className="pb-project-edit-input"
+                        value={editProjectName}
+                        onChange={(e) => setEditProjectName(e.target.value)}
+                        autoFocus
+                        onBlur={(e) => handleSaveEditProject(e, project.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') handleCancelEditProject(e);
+                        }}
+                      />
+                    </form>
+                  ) : (
+                    <>
+                      <h3 className="pb-project-name" onDoubleClick={(e) => handleStartEditProject(project, e)}>{project.name}</h3>
+                      {project.description && <p className="pb-project-desc">{project.description}</p>}
+                    </>
+                  )}
                 </div>
                 <div className="pb-project-stats">
                   <span className="pb-stat-pill">
@@ -352,14 +402,24 @@ const ProjectBoard = ({
                       <button className="pb-action-btn" onClick={() => setConfirmDeleteProject(null)}>No</button>
                     </div>
                   ) : (
-                    <button
-                      className={`pb-action-btn delete ${isFocusActive ? 'disabled' : ''}`}
-                      onClick={(e) => { e.stopPropagation(); !isFocusActive && setConfirmDeleteProject(project.id); }}
-                      disabled={isFocusActive}
-                      title={isFocusActive ? "Cannot delete during focus" : "Delete project"}
-                    >
-                      <TrashIcon />
-                    </button>
+                    <>
+                      <button
+                        className={`pb-action-btn edit ${isFocusActive ? 'disabled' : ''}`}
+                        onClick={(e) => handleStartEditProject(project, e)}
+                        disabled={isFocusActive}
+                        title={isFocusActive ? "Cannot edit during focus" : "Rename project"}
+                      >
+                        <EditIcon />
+                      </button>
+                      <button
+                        className={`pb-action-btn delete ${isFocusActive ? 'disabled' : ''}`}
+                        onClick={(e) => { e.stopPropagation(); !isFocusActive && setConfirmDeleteProject(project.id); }}
+                        disabled={isFocusActive}
+                        title={isFocusActive ? "Cannot delete during focus" : "Delete project"}
+                      >
+                        <TrashIcon />
+                      </button>
+                    </>
                   )}
                   <span className={`pb-chevron ${isExpanded ? 'open' : ''}`}>
                     <ChevronDown />

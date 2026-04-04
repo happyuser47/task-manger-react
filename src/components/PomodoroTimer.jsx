@@ -304,6 +304,16 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
       const newCount = sessionsCompleted + 1;
       setSessionsCompleted(newCount);
       updatePomodoroSettings({ sessionsCompleted: newCount });
+
+      // Log Focus Session to analytics
+      if (user) {
+        const focusDuration = getDuration('focus');
+        supabase.from('pomodoro_sessions').insert([{
+          user_id: user.id,
+          duration: focusDuration
+        }]).catch(err => console.error('Failed to log pomodoro:', err));
+      }
+
       if (newCount % 4 === 0) {
         switchMode('longBreak');
       } else {
@@ -312,7 +322,7 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
     } else {
       switchMode('focus');
     }
-  }, [mode, sessionsCompleted, currentTaskId, onStopTask, switchMode]);
+  }, [mode, sessionsCompleted, currentTaskId, onStopTask, switchMode, user, getDuration]);
 
   const toggleTimer = () => {
     // Resume audio context on user interaction to satisfy browser policies

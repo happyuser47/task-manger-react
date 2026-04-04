@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { formatTime } from '../hooks/useTaskManager';
 import { useSettingsContext } from '../contexts/SettingsContext';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../supabaseClient';
 
 const COLORS = {
   primary: '#8b5cf6',
@@ -44,10 +46,22 @@ const CustomTooltip = ({ active, payload, label }) => {
 const Analytics = ({ sessions }) => {
   const [activeTab, setActiveTab] = useState('daily');
   const { getLocalTime } = useSettingsContext();
+  const { user } = useAuth();
+  const [focusSessions, setFocusSessions] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchFocus = async () => {
+      const { data } = await supabase.from('pomodoro_sessions').select('*').eq('user_id', user.id);
+      if (data) setFocusSessions(data);
+    };
+    fetchFocus();
+  }, [user]);
 
   const analyticsData = useMemo(() => {
     // Basic formatting helpers
     const validSessions = (sessions || []).filter(s => s.check_out && s.duration);
+    const validFocus = focusSessions || [];
 
     const getLocalKey = (date) => {
       const d = getLocalTime(date);
@@ -66,7 +80,8 @@ const Analytics = ({ sessions }) => {
       dailyMap[key] = {
         name: d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
         date: d,
-        workTime: 0
+        workTime: 0,
+        focusTime: 0
       };
     }
 
@@ -83,7 +98,8 @@ const Analytics = ({ sessions }) => {
       weeklyMap[key] = {
         name: `Wk of ${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
         date: startOfWeek,
-        workTime: 0
+        workTime: 0,
+        focusTime: 0
       };
     }
 
@@ -98,12 +114,14 @@ const Analytics = ({ sessions }) => {
       monthlyMap[key] = {
         name: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         date: d,
-        workTime: 0
+        workTime: 0,
+        focusTime: 0
       };
     }
 
     // Aggregate Data
     let totalWorkTime = 0;
+    let totalFocusTime = 0;
 
     validSessions.forEach(session => {
       const sessionDate = new Date(session.check_in);
@@ -128,6 +146,29 @@ const Analytics = ({ sessions }) => {
       if (monthlyMap[monthKey]) monthlyMap[monthKey].workTime += duration;
     });
 
+    validFocus.forEach(session => {
+      const sessionDate = new Date(session.completed_at);
+      const localSessionDate = getLocalTime(sessionDate);
+      const duration = session.duration || 0;
+      totalFocusTime += duration;
+
+      // Daily
+      const dayKey = `${localSessionDate.getFullYear()}-${String(localSessionDate.getMonth() + 1).padStart(2, '0')}-${String(localSessionDate.getDate()).padStart(2, '0')}`;
+      if (dailyMap[dayKey]) dailyMap[dayKey].focusTime += duration;
+
+      // Weekly
+      const day = localSessionDate.getDay();
+      const diff = localSessionDate.getDate() - day + (day === 0 ? -6 : 1);
+      const startOfWeek = new Date(new Date(localSessionDate).setDate(diff));
+      startOfWeek.setHours(0, 0, 0, 0);
+      const weekKey = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
+      if (weeklyMap[weekKey]) weeklyMap[weekKey].focusTime += duration;
+
+      // Monthly
+      const monthKey = `${localSessionDate.getFullYear()}-${String(localSessionDate.getMonth() + 1).padStart(2, '0')}`;
+      if (monthlyMap[monthKey]) monthlyMap[monthKey].focusTime += duration;
+    });
+
     return {
       daily: Object.values(dailyMap),
       weekly: Object.values(weeklyMap),
@@ -135,10 +176,11 @@ const Analytics = ({ sessions }) => {
       summary: {
         totalSessions: validSessions.length,
         totalWorkTime,
+        totalFocusTime,
         avgSessionLength: validSessions.length > 0 ? Math.floor(totalWorkTime / validSessions.length) : 0
       }
     };
-  }, [sessions]);
+  }, [sessions, focusSessions]);
 
   const hasData = analyticsData.summary.totalSessions > 0;
 
@@ -212,7 +254,22 @@ const Analytics = ({ sessions }) => {
             <span className="summary-value">
               {formatTime(analyticsData.summary.totalWorkTime)}
             </span>
-            <span className="summary-label">Total Focus Time</span>
+            <span className="summary-label">Working Time</span>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="summary-icon time" style={{ backgroundColor: 'rgba(236, 72, 153, 0.15)', color: '#ec4899' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <div className="summary-content">
+            <span className="summary-value" style={{ color: '#ec4899' }}>
+              {formatTime(analyticsData.summary.totalFocusTime)}
+            </span>
+            <span className="summary-label">Focus Time</span>
           </div>
         </div>
 
@@ -267,6 +324,10 @@ const Analytics = ({ sessions }) => {
                     <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.5} />
                     <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0.05} />
                   </linearGradient>
+                  <linearGradient id="colorFocusTimeArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ec4899" stopOpacity={0.5} />
+                    <stop offset="95%" stopColor="#ec4899" stopOpacity={0.05} />
+                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="4 4" stroke="var(--border-subtle)" vertical={false} />
                 <XAxis
@@ -296,9 +357,20 @@ const Analytics = ({ sessions }) => {
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#colorWorkTimeArea)"
-                  name="Session Time"
+                  name="Working Time"
                   dot={false}
                   activeDot={{ r: 5, strokeWidth: 0, fill: COLORS.primary }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="focusTime"
+                  stroke="#ec4899"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorFocusTimeArea)"
+                  name="Focus Time"
+                  dot={false}
+                  activeDot={{ r: 5, strokeWidth: 0, fill: '#ec4899' }}
                 />
               </AreaChart>
             </ResponsiveContainer>
