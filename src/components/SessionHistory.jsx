@@ -305,32 +305,32 @@ const SessionHistory = () => {
       )}
 
       {/* Stats Cards */}
-      <div className="history-stats-grid">
-        <div className="history-stat-card">
-          <div className="stat-icon sessions">
+      <div className="analytics-summary">
+        <div className="summary-card">
+          <div className="summary-icon attempts">
             <CheckCircleIcon />
           </div>
-          <div className="stat-content">
-            <span className="stat-label">Total Sessions</span>
-            <span className="stat-value">{localStats.totalSessions}</span>
+          <div className="summary-content">
+            <span className="summary-value">{localStats.totalSessions}</span>
+            <span className="summary-label">Total Sessions</span>
           </div>
         </div>
-        <div className="history-stat-card">
-          <div className="stat-icon time">
+        <div className="summary-card">
+          <div className="summary-icon time">
             <ClockIcon />
           </div>
-          <div className="stat-content">
-            <span className="stat-label">Total Time</span>
-            <span className="stat-value">{formatDuration(localStats.totalTime)}</span>
+          <div className="summary-content">
+            <span className="summary-value">{formatDuration(localStats.totalTime)}</span>
+            <span className="summary-label">Total Time</span>
           </div>
         </div>
-        <div className="history-stat-card">
-          <div className="stat-icon average">
+        <div className="summary-card">
+          <div className="summary-icon completion">
             <TargetIcon />
           </div>
-          <div className="stat-content">
-            <span className="stat-label">Avg. Session</span>
-            <span className="stat-value">{formatDuration(localStats.avgSessionTime)}</span>
+          <div className="summary-content">
+            <span className="summary-value">{formatDuration(localStats.avgSessionTime)}</span>
+            <span className="summary-label">Avg. Session</span>
           </div>
         </div>
       </div>

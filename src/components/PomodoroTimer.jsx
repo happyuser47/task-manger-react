@@ -247,9 +247,14 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
 
       setTimeLeft(prev => {
         if (prev <= 1) {
-          clearInterval(intervalRef.current);
-          setIsRunning(false);
-          handleTimerComplete();
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null; // Prevents double execution in React StrictMode
+            setTimeout(() => {
+              setIsRunning(false);
+              handleTimerComplete();
+            }, 0);
+          }
           return 0;
         }
         localStorage.setItem('pomodoro_lastTick', Date.now().toString());
@@ -308,10 +313,17 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
       // Log Focus Session to analytics
       if (user) {
         const focusDuration = getDuration('focus');
-        supabase.from('pomodoro_sessions').insert([{
+        supabase.from('pomodoro_sessions').insert({
           user_id: user.id,
-          duration: focusDuration
-        }]).catch(err => console.error('Failed to log pomodoro:', err));
+          duration: focusDuration,
+          completed_at: new Date().toISOString()
+        }).then(({ data, error }) => {
+          if (error) {
+            console.error('Failed to log pomodoro session:', error.message);
+          } else {
+            console.log('Pomodoro session logged:', focusDuration, 'seconds');
+          }
+        });
       }
 
       if (newCount % 4 === 0) {
@@ -354,8 +366,26 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
     });
   };
 
+  const logPartialSession = () => {
+    if (mode === 'focus' && user && timeLeft > 0) {
+      const fullDuration = getDuration('focus');
+      const elapsedSeconds = fullDuration - timeLeft;
+      
+      if (elapsedSeconds >= 60) {
+        supabase.from('pomodoro_sessions').insert({
+          user_id: user.id,
+          duration: elapsedSeconds,
+          completed_at: new Date().toISOString()
+        }).then(({ error }) => {
+          if (error) console.error('Failed to log partial session:', error.message);
+        });
+      }
+    }
+  };
+
   const stopAndClose = () => {
-    // Full stop: stop timer, stop task, reset, then close
+    // Full stop: stop timer, stop task, log partial, reset, then close
+    logPartialSession();
     if (isRunning && mode === 'focus' && currentTaskId && onStopTask) {
       onStopTask(currentTaskId);
     }
@@ -367,6 +397,7 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
   };
 
   const resetTimer = () => {
+    logPartialSession();
     if (mode === 'focus' && isRunning && currentTaskId && onStopTask) {
       onStopTask(currentTaskId);
     }
@@ -740,7 +771,7 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
               {/* Skip is disabled when running in focus mode */}
               <button 
                 className="pomodoro-btn secondary" 
-                onClick={() => { if (!isRunning) { if (mode === 'focus') { const c = sessionsCompleted + 1; setSessionsCompleted(c); switchMode(c % 4 === 0 ? 'longBreak' : 'shortBreak'); } else { switchMode('focus'); } } }}
+                onClick={() => { if (!isRunning) { if (mode === 'focus') { logPartialSession(); const c = sessionsCompleted + 1; setSessionsCompleted(c); switchMode(c % 4 === 0 ? 'longBreak' : 'shortBreak'); } else { switchMode('focus'); } } }}
                 title={isRunning ? "Cannot skip during focus" : "Skip"}
                 disabled={isRunning}
               >
