@@ -47,6 +47,7 @@ const Dashboard = () => {
     projects,
     loading: projectsLoading,
     addProject,
+    updateProject,
     deleteProject,
   } = useProjects();
 
