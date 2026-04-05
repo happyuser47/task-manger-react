@@ -482,14 +482,16 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
   // Portal keeps the overlay out of .app so position:fixed is always viewport-relative
   // (avoids mobile/WebKit bugs with fixed descendants of transformed or composited ancestors).
   return createPortal(
-    <div 
-      className={`pomodoro-overlay ${isFullscreen ? 'pomodoro-fullscreen' : ''}`} 
+    <div
+      id="pomodoro-overlay-root"
+      className={`pomodoro-overlay ${isFullscreen ? 'pomodoro-fullscreen' : ''}`}
       onClick={handleOverlayClick}
     >
-      <div 
-        className={`pomodoro-modal ${isFullscreen ? 'fullscreen-modal' : ''}`} 
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="pomodoro-modal-align">
+        <div
+          className={`pomodoro-modal ${isFullscreen ? 'fullscreen-modal' : ''}`}
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header */}
         <div className="pomodoro-header">
           <div className="pomodoro-header-left">
@@ -813,6 +815,7 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
             </div>
           </>
         )}
+        </div>
       </div>
     </div>,
     document.body

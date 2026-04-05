@@ -2,24 +2,65 @@
    Pomodoro Timer - Premium Modal Styles
    ============================================ */
 
-.pomodoro-overlay {
+/* Fixed ID keeps centering rules winning over any broad selectors in bundled CSS */
+#pomodoro-overlay-root.pomodoro-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
+  max-width: 100vw;
   min-height: 100vh;
   min-height: 100dvh;
+  margin: 0;
   padding: max(0px, env(safe-area-inset-top, 0px)) max(0px, env(safe-area-inset-right, 0px))
     max(0px, env(safe-area-inset-bottom, 0px)) max(0px, env(safe-area-inset-left, 0px));
   background: rgba(0, 0, 0, 0.75);
+  box-sizing: border-box;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   z-index: 10001;
   animation: pomodoroFadeIn 0.25s ease;
 }
 
-.pomodoro-overlay.pomodoro-fullscreen {
+/* Full-viewport flex shell: centers the dialog even when outer flex is unreliable (prod WebKit, etc.) */
+.pomodoro-modal-align {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.pomodoro-modal-align .pomodoro-modal {
+  pointer-events: auto;
+}
+
+#pomodoro-overlay-root.pomodoro-overlay.pomodoro-fullscreen {
   background: var(--bg-primary);
+}
+
+#pomodoro-overlay-root.pomodoro-overlay.pomodoro-fullscreen .pomodoro-modal-align {
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 100%;
+}
+
+#pomodoro-overlay-root.pomodoro-overlay.pomodoro-fullscreen .pomodoro-modal-align .pomodoro-modal.fullscreen-modal {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: none;
+  align-self: stretch;
 }
 
 @keyframes pomodoroFadeIn {
