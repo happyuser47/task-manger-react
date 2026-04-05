@@ -51,11 +51,28 @@ const Analytics = ({ sessions }) => {
 
   useEffect(() => {
     if (!user) return;
+    
     const fetchFocus = async () => {
       const { data } = await supabase.from('pomodoro_sessions').select('*').eq('user_id', user.id);
       if (data) setFocusSessions(data);
     };
+    
     fetchFocus();
+
+    const focusSubscription = supabase
+      .channel('analytics-focus-channel')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'pomodoro_sessions', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          setFocusSessions((prev) => [...prev, payload.new]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(focusSubscription);
+    };
   }, [user]);
 
   const analyticsData = useMemo(() => {
@@ -147,7 +164,7 @@ const Analytics = ({ sessions }) => {
     });
 
     validFocus.forEach(session => {
-      const sessionDate = new Date(session.completed_at);
+      const sessionDate = new Date(session.completed_at || session.created_at);
       const localSessionDate = getLocalTime(sessionDate);
       const duration = session.duration || 0;
       totalFocusTime += duration;
@@ -175,6 +192,7 @@ const Analytics = ({ sessions }) => {
       monthly: Object.values(monthlyMap),
       summary: {
         totalSessions: validSessions.length,
+        totalFocusSessions: focusSessions.length,
         totalWorkTime,
         totalFocusTime,
         avgSessionLength: validSessions.length > 0 ? Math.floor(totalWorkTime / validSessions.length) : 0
@@ -182,7 +200,7 @@ const Analytics = ({ sessions }) => {
     };
   }, [sessions, focusSessions]);
 
-  const hasData = analyticsData.summary.totalSessions > 0;
+  const hasData = analyticsData.summary.totalSessions > 0 || analyticsData.summary.totalFocusSessions > 0;
 
   if (!hasData) {
     return (

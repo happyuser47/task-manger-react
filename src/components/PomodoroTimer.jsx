@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useSettingsContext } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../supabaseClient';
@@ -478,7 +479,9 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
 
   if (!isOpen) return null;
 
-  return (
+  // Portal keeps the overlay out of .app so position:fixed is always viewport-relative
+  // (avoids mobile/WebKit bugs with fixed descendants of transformed or composited ancestors).
+  return createPortal(
     <div 
       className={`pomodoro-overlay ${isFullscreen ? 'pomodoro-fullscreen' : ''}`} 
       onClick={handleOverlayClick}
@@ -811,7 +814,8 @@ const PomodoroTimer = ({ isOpen, onClose, task, tasks = [], onRunningChange, onS
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
